@@ -1,7 +1,10 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/node-postgres";
 
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle({ client: sql });
+const db = drizzle({
+  connection: {
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === "production" ? true : false,
+  },
+});
 
 export default db;
