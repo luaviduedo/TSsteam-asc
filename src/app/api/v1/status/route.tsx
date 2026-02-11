@@ -1,5 +1,7 @@
 import db from "@/src/drizzle/db";
+import { usersTable } from "@/src/drizzle/schema";
 import { QueryResultRow } from "@neondatabase/serverless";
+import { PgTable } from "drizzle-orm/pg-core";
 
 export async function GET() {
   const updatedAt = new Date().toISOString();
@@ -33,6 +35,6 @@ export async function GET() {
 
 export async function POST() {
   await db
-    .insert(users)
+    .insert(usersTable)
     .values({ name: "bancoNeon", age: 18, email: "bancoonline@gmail.com" });
 }
