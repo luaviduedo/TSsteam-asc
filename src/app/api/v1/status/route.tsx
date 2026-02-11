@@ -1,6 +1,5 @@
 import db from "@/src/drizzle/db";
 import { QueryResultRow } from "@neondatabase/serverless";
-import { usersTable } from "@/src/drizzle/schema";
 
 export async function GET() {
   const updatedAt = new Date().toISOString();
@@ -30,10 +29,4 @@ export async function GET() {
     },
     { status: 200 },
   );
-}
-
-export async function POST() {
-  await db
-    .insert(usersTable)
-    .values({ name: "bancoNeon", age: 18, email: "bancoonline@gmail.com" });
 }
