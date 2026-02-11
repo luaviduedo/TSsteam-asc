@@ -30,3 +30,9 @@ export async function GET() {
     { status: 200 },
   );
 }
+
+export async function POST() {
+  await db
+    .insert(users)
+    .values({ name: "bancoNeon", age: 18, email: "bancoonline@gmail.com" });
+}
