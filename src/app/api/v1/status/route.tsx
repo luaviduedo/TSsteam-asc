@@ -1,12 +1,11 @@
 import db from "@/src/drizzle/db";
-import { usersTable } from "@/src/drizzle/schema";
 import { QueryResultRow } from "@neondatabase/serverless";
-import { PgTable } from "drizzle-orm/pg-core";
+import { usersTable } from "@/src/drizzle/schema";
 
 export async function GET() {
   const updatedAt = new Date().toISOString();
 
-  const users = await db.query.usersTable.findMany();
+  const usersResult = await db.query.usersTable.findMany();
 
   const databaseVersionResult = await db.execute("SHOW server_version");
   const databaseVersionValue = databaseVersionResult.rows[0].server_version;
@@ -20,7 +19,7 @@ export async function GET() {
 
   return Response.json(
     {
-      users: users,
+      users: usersResult,
       updated_at: updatedAt,
       dependencies: {
         database: {
