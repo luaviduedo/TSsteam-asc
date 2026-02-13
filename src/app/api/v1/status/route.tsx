@@ -16,6 +16,14 @@ export async function GET() {
   const databaseMaxConnectionsValue =
     databaseMaxConnectionsResult.rows[0].max_connections;
 
+  const databaseName = process.env.POSTGRES_DB;
+  const databaseOpenedConnectionsResult = await db.execute(
+    `SELECT count(*)::int FROM pg_stat_activity WHERE datname = ${databaseName};`,
+  );
+
+  const databaseOpenedConnectionsValue =
+    databaseOpenedConnectionsResult.rows[0].count;
+
   return Response.json(
     {
       users: usersResult,
@@ -24,6 +32,7 @@ export async function GET() {
         database: {
           version: databaseVersionValue,
           max_connections: parseInt(databaseMaxConnectionsValue),
+          openedConnections: databaseOpenedConnectionsValue,
         },
       },
     },
