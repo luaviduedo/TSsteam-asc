@@ -1,4 +1,4 @@
-import db from "@/src/drizzle/db";
+import db from "@/drizzle/db";
 import { QueryResultRow } from "@neondatabase/serverless";
 
 export async function GET() {
