@@ -1,6 +1,6 @@
 import { exec } from "child_process";
 import retry from "async-retry";
-import db from "../drizzle/db";
+import db from "@/drizzle/db";
 
 async function waitForAllServices() {
   await waitForWebServer();
