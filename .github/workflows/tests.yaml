@@ -15,4 +15,4 @@ jobs:
 
       - run: npm ci
 
-      - run: npm testCi
+      - run: npm run testCi
