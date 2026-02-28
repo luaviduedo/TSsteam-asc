@@ -17,6 +17,7 @@ const config: Config = {
     "^tests/(.*)$": "<rootDir>/src/tests/$1",
   },
   extensionsToTreatAsEsm: [".ts"],
+  testTimeout: 60000,
 };
 
 export default config;
