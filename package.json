@@ -13,7 +13,7 @@
     "lint": "eslint",
     "lint:prettier:check": "prettier --check .",
     "lint:prettier:fix": "prettier --write .",
-    "test": "npm run services:up && concurrently -n next,jest --hide next -k -s command-jest \"next dev\" \"jest --runInBand\"",
+    "test": "npm run services:up && concurrently -n next,jest next -k -s command-jest \"next dev\" \"jest --runInBand\"",
     "test:watch": "jest --runInBand --watchAll",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
