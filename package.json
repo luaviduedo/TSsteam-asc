@@ -11,9 +11,10 @@
     "services:down": "docker compose -f src/infra/compose.yaml down",
     "services:wait:database": "node ./src/infra/scripts/wait-for-postgres.ts",
     "lint": "eslint",
-    "lint:fix": "prettier --write .",
-    "lint:check": "prettier --check .",
-    "test": "npm run services:up && concurrently -n next,jest --hide next -k -s command-jest \"next dev\" \"jest --runInBand\"",
+    "lint:prettier:check": "prettier --check .",
+    "lint:prettier:fix": "prettier --write .",
+    "test": "npm run services:up && concurrently -n next,jest next -k -s command-jest \"next dev\" \"jest --runInBand\"",
+    "testCi": "npm run services:up && npm run db:push && concurrently -n next,jest next -k -s command-jest \"next dev\" \"jest --runInBand\"",
     "test:watch": "jest --runInBand --watchAll",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -42,6 +43,7 @@
     "eslint-config-next": "16.1.6",
     "prettier": "^3.8.1",
     "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5"
   }
