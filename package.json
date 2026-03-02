@@ -14,7 +14,7 @@
     "lint:prettier:check": "prettier --check .",
     "lint:prettier:fix": "prettier --write .",
     "test": "npm run services:up && concurrently -n next,jest --hide next -k -s command-jest \"next dev\" \"jest --runInBand\"",
-    "test:ci": "npm run services:up && npm run db:generate && npm run db:push && concurrently -n next,jest next -k -s command-jest \"next dev\" \"jest --runInBand\"",
+    "test:ci": "npm run services:up && npm run db:generate && npm run services:wait:database && npm run db:push && concurrently -n next,jest next -k -s command-jest \"next dev\" \"jest --runInBand\"",
     "test:watch": "jest --runInBand --watchAll",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
