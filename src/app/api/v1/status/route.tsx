@@ -4,6 +4,8 @@ import { QueryResultRow } from "@neondatabase/serverless";
 export async function GET() {
   const updatedAt = new Date().toISOString();
 
+  const usersResult = await db.query.usersTable.findMany();
+
   const databaseVersionResult = await db.execute("SHOW server_version");
   const databaseVersionValue = databaseVersionResult.rows[0].server_version;
 
@@ -25,6 +27,7 @@ export async function GET() {
   return Response.json(
     {
       updated_at: updatedAt,
+      users: usersResult,
       dependencies: {
         database: {
           version: databaseVersionValue,
