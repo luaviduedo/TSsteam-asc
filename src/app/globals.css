@@ -1,12 +1,28 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* global palette copied from status.module.css */
+  --color1: #171d25;
+  --color2: #192636;
+  --color3: #1f3052;
+  --color4: #1f3052;
+  --color5: #ffffff;
+  --color6: #354150;
+
+  --bg: var(--color1);
+  --text: var(--color5);
+  --accent: var(--color3);
+  --accent-light: var(--color4);
+  --neutral: var(--color2);
+
+  /* expose legacy names used by app */
+  --background: var(--bg);
+  --foreground: var(--text);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* keep same palette explicitly available in dark mode */
+    --background: var(--bg);
+    --foreground: var(--text);
   }
 }
 
@@ -38,5 +54,58 @@ a {
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
+  }
+}
+
+/* Header styles used by RootLayout */
+.siteHeader {
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: linear-gradient(
+    180deg,
+    rgba(31, 48, 82, 0.06),
+    rgba(31, 48, 82, 0.03)
+  );
+  border-bottom: 1px solid var(--cardBorder);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+}
+
+.siteHeaderInner {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.siteTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .siteTitle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(53, 65, 80, 0.12);
+    color: var(--accent-light);
   }
 }
