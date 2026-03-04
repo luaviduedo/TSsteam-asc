@@ -1,8 +1,21 @@
+import styles from "./status/status.module.css";
+
 export default function Home() {
   return (
-    <>
-      <h1>Olá, mundo!</h1>
-      <a href="/status">Status</a>
-    </>
+    <main className={styles.page}>
+      <div className={styles.container}>
+        <div className={styles.statusSection}>
+          <div className={styles.sectionTitle}>
+            <span className={styles.sectionTitleText}>Início</span>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <a className={styles.buttonPrimary} href="/status">
+              Ver Status
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
