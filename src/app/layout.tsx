@@ -27,7 +27,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <header className="siteHeader">
           <div className="siteHeaderInner">
-            <a href="/" className="siteTitle">Steam ASC</a>
+            <a href="/" className="siteTitle">
+              Steam ASC
+            </a>
           </div>
         </header>
 
