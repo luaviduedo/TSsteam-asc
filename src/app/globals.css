@@ -16,6 +16,9 @@
   /* expose legacy names used by app */
   --background: var(--bg);
   --foreground: var(--text);
+
+  --cardBorder: rgba(255, 255, 255, 0.14);
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,6 +26,29 @@
     /* keep same palette explicitly available in dark mode */
     --background: var(--bg);
     --foreground: var(--text);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color1: #ffffff;
+    --color2: #f8f9fa;
+    --color3: #e9ecef;
+    --color4: #dee2e6;
+    --color5: #212529;
+    --color6: #6c757d;
+
+    --bg: var(--color1);
+    --text: var(--color5);
+    --accent: var(--color3);
+    --accent-light: var(--color4);
+    --neutral: var(--color2);
+
+    --background: var(--bg);
+    --foreground: var(--text);
+
+    --cardBorder: rgba(0, 0, 0, 0.1);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
   }
 }
 

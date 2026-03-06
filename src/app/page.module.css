@@ -1,7 +1,7 @@
 .page {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: top;
   justify-content: center;
   background:
     radial-gradient(
@@ -100,6 +100,80 @@
   transition:
     transform 120ms ease,
     box-shadow 120ms ease;
+}
+
+.steamForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.steamForm form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.steamForm label {
+  color: var(--muted);
+  font-weight: 650;
+  font-size: 14px;
+}
+
+.steamForm input {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 500;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.steamForm input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (prefers-color-scheme: light) {
+  .steamForm input {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .steamForm input:focus {
+    border-color: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .page {
+    background:
+      radial-gradient(
+        1200px 700px at 15% 10%,
+        rgba(0, 0, 0, 0.1),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px 600px at 85% 20%,
+        rgba(0, 0, 0, 0.08),
+        transparent 60%
+      ),
+      radial-gradient(
+        800px 500px at 50% 90%,
+        rgba(0, 0, 0, 0.06),
+        transparent 60%
+      ),
+      var(--bg);
+  }
+}
+
+.steamForm button {
+  align-self: flex-start;
 }
 
 @media (hover: hover) and (pointer: fine) {
