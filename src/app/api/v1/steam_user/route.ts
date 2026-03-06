@@ -1,0 +1,22 @@
+export async function POST(request: Request) {
+  const steamKeyAPI: string = process.env.STEAM_API_KEY || "";
+  const requestBody = await request.json();
+  const steamId64Search = requestBody.req_steam_id_64;
+
+  console.log(steamId64Search);
+
+  async function fetchSteamUser(steamKey: string, steamId64: string) {
+    const response = await fetch(
+      `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${steamKey}&steamids=${steamId64}`,
+    );
+    const responseBody = await response.json();
+
+    console.log(responseBody);
+    return responseBody;
+  }
+
+  const { response } = await fetchSteamUser(steamKeyAPI, steamId64Search);
+  const steamNickName = response.players[0].personaname;
+
+  return Response.json({ STEAM: steamNickName }, { status: 200 });
+}
