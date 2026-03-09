@@ -2,6 +2,7 @@ export async function POST(request: Request) {
   const steamKeyAPI: string = process.env.STEAM_API_KEY || "";
   const requestBody = await request.json();
   const steamId64Search = requestBody.req_steam_id_64;
+  console.log(requestBody);
 
   // const steamIdRegex = /^\d{17}$/;
 
