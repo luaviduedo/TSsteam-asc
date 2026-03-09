@@ -24,14 +24,14 @@ describe("POST /api/v1/steam_user", () => {
       expect(responseBody).toEqual({ STEAM: "rodolfo old #fimdoracismo" });
     });
     test("With incorrect `steamId64`", async () => {
-      const correctSteamId64 = "7656119814504074";
+      const inCorrectSteamId64 = "7656119814504074";
       const response = await fetch("http://localhost:3000/api/v1/steam_user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          req_steam_id_64: correctSteamId64,
+          req_steam_id_64: inCorrectSteamId64,
         }),
       });
       expect(response.status).toBe(400);
