@@ -3,7 +3,11 @@ export async function POST(request: Request) {
   const requestBody = await request.json();
   const steamId64Search = requestBody.req_steam_id_64;
 
-  console.log(steamId64Search);
+  const steamIdRegex = /^\d{17}$/;
+
+  if (!steamIdRegex.test(steamId64Search)) {
+    return Response.json({ error: "SteamID64 inválido." }, { status: 400 });
+  }
 
   async function fetchSteamUser(steamKey: string, steamId64: string) {
     const response = await fetch(
@@ -11,7 +15,6 @@ export async function POST(request: Request) {
     );
     const responseBody = await response.json();
 
-    console.log(responseBody);
     return responseBody;
   }
 
