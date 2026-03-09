@@ -6,7 +6,7 @@
     "dev": "npm run services:up && npm run services:wait:database && npm run db:push && next dev",
     "test": "npm run services:up && concurrently -n next,jest --hide next -k -s command-jest \"next dev\" \"jest --runInBand\"",
     "posttest": "npm run services:stop",
-    "test:ci": "npm run services:up && npm run services:wait:database && npm run db:generate && npm run db:push && concurrently -n next,jest --hide next -k -s command-jest \"next dev\" \"jest --runInBand\" && npm run posttest",
+    "test:ci": "npm run services:up && npm run services:wait:database && npm run db:generate && npm run db:push && concurrently -n next,jest next -k -s command-jest \"next dev\" \"jest --runInBand\" && npm run posttest",
     "test:watch": "jest --runInBand --watchAll",
     "build": "next build",
     "start": "next start",
