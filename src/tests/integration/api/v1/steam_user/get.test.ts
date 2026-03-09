@@ -25,7 +25,7 @@ describe("POST /api/v1/steam_user", () => {
     });
     test("With correct `steamId64`", async () => {
       const correctSteamId64 = "76561198145040749";
-      const response = await fetch("/api/v1/steam_user", {
+      const response = await fetch("http://localhost:3000/api/v1/steam_user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
