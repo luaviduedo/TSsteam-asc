@@ -13,8 +13,8 @@ export async function POST(request: Request) {
     const response = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${steamKey}&steamids=${steamId64}`,
     );
+    console.log(response);
     const responseBody = await response.json();
-    console.log(responseBody);
 
     return responseBody;
   }
