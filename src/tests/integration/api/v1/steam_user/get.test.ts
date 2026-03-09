@@ -17,7 +17,6 @@ describe("POST /api/v1/steam_user", () => {
           req_steam_id_64: correctSteamId64,
         }),
       });
-      console.log(response);
 
       expect(response.status).toBe(200);
 

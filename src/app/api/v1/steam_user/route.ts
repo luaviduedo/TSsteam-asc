@@ -2,18 +2,17 @@ export async function POST(request: Request) {
   const steamKeyAPI: string = process.env.STEAM_API_KEY || "";
   const requestBody = await request.json();
   const steamId64Search = requestBody.req_steam_id_64;
-  console.log(requestBody);
 
-  // const steamIdRegex = /^\d{17}$/;
+  const steamIdRegex = /^\d{17}$/;
 
-  // if (!steamIdRegex.test(steamId64Search)) {
-  //   return Response.json({ error: "SteamID64 inválido." }, { status: 400 });
-  // }
+  if (!steamIdRegex.test(steamId64Search)) {
+    return Response.json({ error: "SteamID64 inválido." }, { status: 400 });
+  }
+
   async function fetchSteamUser(steamKey: string, steamId64: string) {
     const response = await fetch(
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${steamKey}&steamids=${steamId64}`,
     );
-    console.log(response);
     const responseBody = await response.json();
 
     return responseBody;
