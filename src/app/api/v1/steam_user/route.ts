@@ -57,9 +57,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const steamNickName = response.players[0].personaname;
+    const steamUser = response.players[0];
 
-    return Response.json({ STEAM: steamNickName }, { status: 200 });
+    return Response.json({ STEAM: steamUser }, { status: 200 });
   } catch (error) {
     console.error("Erro interno:", error);
 

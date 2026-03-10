@@ -20,9 +20,11 @@ describe("POST /api/v1/steam_user", () => {
 
       expect(response.status).toBe(200);
 
-      const responseBody = await response.json();
+      const { STEAM } = await response.json();
 
-      expect(responseBody).toEqual({ STEAM: "rodolfo old #fimdoracismo" });
+      const results = STEAM;
+
+      expect(results.personaname).toEqual("rodolfo old #fimdoracismo");
     });
     test("With incorrect `steamId64`", async () => {
       const inCorrectSteamId64 = "7656119814504074";
