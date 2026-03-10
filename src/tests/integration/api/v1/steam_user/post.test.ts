@@ -41,5 +41,17 @@ describe("POST /api/v1/steam_user", () => {
 
       expect(responseBody).toEqual({ error: "SteamID64 inválido." });
     });
+    test("With no data", async () => {
+      const response = await fetch("http://localhost:3000/api/v1/steam_user", {
+        method: "POST",
+      });
+      expect(response.status).toBe(400);
+
+      const responseBody = await response.json();
+
+      expect(responseBody).toEqual({
+        error: "Body da requisição precisa ser JSON válido.",
+      });
+    });
   });
 });
