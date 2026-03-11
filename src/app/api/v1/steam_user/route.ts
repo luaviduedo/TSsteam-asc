@@ -1,6 +1,6 @@
 export async function POST(request: Request) {
   try {
-    const steamKeyAPI: string = process.env.STEAM_API_KEY || "";
+    const steamKeyAPI: string = process.env.STEAM_API_KEY_1 || "";
 
     if (!steamKeyAPI) {
       return Response.json(
