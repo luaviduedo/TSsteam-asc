@@ -1,8 +1,9 @@
-.page {
+.pageShell {
   min-height: 100vh;
   display: flex;
   align-items: flex-start;
   justify-content: center;
+  padding: 56px 20px;
   background:
     radial-gradient(
       1200px 700px at 15% 10%,
@@ -20,38 +21,14 @@
       transparent 60%
     ),
     var(--bg);
-  color: var(--text);
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    Helvetica,
-    Arial;
 }
 
-.container {
+.contentCard {
   width: 100%;
   max-width: 920px;
-  padding: 56px 18px;
-}
-
-.heading {
-  font-size: 44px;
-  line-height: 1.08;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  margin: 0 0 22px 0;
-}
-.statusSection {
-  display: flex;
-  flex-direction: column;
+  margin-top: 24px;
+  padding: 20px;
   border-radius: 18px;
-  padding: 18px;
-  align-items: center;
-  text-align: center;
-  gap: 20px;
   background: var(--card);
   border: 1px solid var(--cardBorder);
   box-shadow: var(--shadow);
@@ -61,7 +38,7 @@
   overflow: hidden;
 }
 
-.statusSection::after {
+.contentCard::after {
   content: "";
   position: absolute;
   inset: -1px;
@@ -74,89 +51,95 @@
   pointer-events: none;
 }
 
-.sectionTitle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 10px 14px;
-  margin: 0 0 12px 0;
+.heroSection {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 20px;
 }
 
-.sectionTitleText {
-  font-size: 18px;
+.heroEyebrow {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 44px;
+  line-height: 1.08;
   font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
-.buttonPrimary {
-  appearance: none;
+.heroDescription {
+  margin: 0;
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.actionsSection {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease,
+    border-color 120ms ease;
+}
+
+.primaryAction {
+  color: var(--text);
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: linear-gradient(
     180deg,
     var(--accent) 0%,
     var(--accent-light) 100%
   );
+}
+
+.secondaryAction {
   color: var(--text);
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  transition:
-    transform 120ms ease,
-    box-shadow 120ms ease;
-}
-
-.steamForm {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.steamForm form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.steamForm label {
-  color: var(--muted);
-  font-weight: 650;
-  font-size: 14px;
-}
-
-.steamForm input {
-  appearance: none;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-weight: 500;
-  transition:
-    border-color 120ms ease,
-    background 120ms ease;
 }
 
-.steamForm input:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .primaryAction:hover,
+  .secondaryAction:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 34px rgba(53, 65, 80, 0.16);
+  }
+
+  .secondaryAction:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 
 @media (prefers-color-scheme: light) {
-  .steamForm input {
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    background: rgba(0, 0, 0, 0.03);
-  }
-
-  .steamForm input:focus {
-    border-color: rgba(0, 0, 0, 0.2);
-    background: rgba(0, 0, 0, 0.05);
-  }
-
-  .page {
+  .pageShell {
     background:
       radial-gradient(
         1200px 700px at 15% 10%,
@@ -175,97 +158,35 @@
       ),
       var(--bg);
   }
-}
 
-.steamForm button {
-  align-self: flex-start;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .buttonPrimary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 34px rgba(53, 65, 80, 0.16);
-  }
-}
-
-@media (max-width: 600px) {
-  .heading {
-    font-size: 34px;
-  }
-
-  .container {
-    padding: 24px 12px;
-  }
-}
-
-.homeLinks {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding: 10px;
-  padding-top: 8px;
-}
-
-.buttonSecondary {
-  appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  text-decoration: none;
-  transition:
-    transform 120ms ease,
-    box-shadow 120ms ease,
-    background 120ms ease;
-}
-
-.buttonPrimary,
-.buttonSecondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: light) {
-  .buttonSecondary {
+  .secondaryAction {
     border: 1px solid rgba(0, 0, 0, 0.1);
     background: rgba(0, 0, 0, 0.03);
   }
 
-  .buttonSecondary:hover {
+  .secondaryAction:hover {
     background: rgba(0, 0, 0, 0.05);
   }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .buttonSecondary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 34px rgba(53, 65, 80, 0.16);
-  }
-}
-
 @media (max-width: 600px) {
-  .homeLinks {
+  .contentCard {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .heroTitle {
+    font-size: 34px;
+  }
+
+  .actionsSection {
     flex-direction: column;
   }
 
-  .buttonPrimary,
-  .buttonSecondary {
+  .primaryAction,
+  .secondaryAction {
     width: 100%;
+    text-align: center;
   }
-}
-
-.description {
-  margin: 0;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.5;
-  max-width: 520px;
-  text-align: center;
 }

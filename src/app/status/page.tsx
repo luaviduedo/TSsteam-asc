@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
 import useSWR from "swr";
 import styles from "./status.module.css";
 
-async function fetchAPI(key: string | URL | Request) {
-  const response = await fetch(key);
+async function fetchAPI(url: string) {
+  const response = await fetch(url);
   const responseBody = await response.json();
   return responseBody;
 }
@@ -25,40 +24,43 @@ type StatusResponse = {
   updated_at?: string;
 };
 
-function getDbHealth(
+function getDatabaseHealth(
   data: StatusResponse | undefined,
   isLoading: boolean,
 ): Health {
   if (isLoading) return "loading";
   if (!data) return "down";
 
-  const db = data?.dependencies?.database;
+  const database = data.dependencies?.database;
 
-  if (!db) return "down";
+  if (!database) return "down";
 
-  // Common shapes:
-  // - { healthy: true/false }
-  // - { status: "up" | "down" | "degraded" }
-  // - or presence of version/max_connections implies "ok"
-  if (typeof db.healthy === "boolean") return db.healthy ? "ok" : "down";
+  if (typeof database.healthy === "boolean") {
+    return database.healthy ? "ok" : "down";
+  }
 
-  const status = String(db.status ?? "").toLowerCase();
+  const status = String(database.status ?? "").toLowerCase();
+
   if (status.includes("degrad") || status.includes("warn")) return "warn";
   if (
     status.includes("down") ||
     status.includes("fail") ||
     status.includes("error")
-  )
+  ) {
     return "down";
+  }
   if (
     status.includes("up") ||
     status.includes("ok") ||
     status.includes("healthy")
-  )
+  ) {
     return "ok";
+  }
 
-  // Fallback: if it has sane fields, assume ok
-  if (db.version && typeof db.max_connections !== "undefined") return "ok";
+  if (database.version && typeof database.max_connections !== "undefined") {
+    return "ok";
+  }
+
   return "warn";
 }
 
@@ -76,85 +78,102 @@ function getHealthLabel(health: Health) {
 }
 
 export default function StatusPage() {
-  const { isLoading, data, mutate } = useSWR("/api/v1/status", fetchAPI, {
-    refreshInterval: 3000,
-  });
+  const { data, isLoading, mutate } = useSWR<StatusResponse>(
+    "/api/v1/status",
+    fetchAPI,
+    {
+      refreshInterval: 3000,
+    },
+  );
+
+  const databaseHealth = getDatabaseHealth(data, isLoading);
 
   const updatedAtText =
     !isLoading && data?.updated_at
       ? new Date(data.updated_at).toLocaleString("pt-BR")
       : "Carregando...";
 
-  const health = getDbHealth(data, isLoading);
-
-  const onRefresh = () => mutate();
-
-  const badgeClass =
-    health === "ok"
+  const badgeVariantClass =
+    databaseHealth === "ok"
       ? styles.badgeOk
-      : health === "warn"
+      : databaseHealth === "warn"
         ? styles.badgeWarn
-        : health === "down"
+        : databaseHealth === "down"
           ? styles.badgeDown
           : styles.badgeLoading;
 
+  function handleRefresh() {
+    mutate();
+  }
+
   return (
-    <div className={styles.container}>
-      <h1 className={styles.heading}>Status</h1>
+    <main className={styles.pageShell}>
+      <section className={styles.contentCard}>
+        <header className={styles.heroSection}>
+          <p className={styles.heroEyebrow}>Steam ASC</p>
+          <h1 className={styles.heroTitle}>Status</h1>
+          <p className={styles.heroDescription}>
+            Acompanhe a saúde da aplicação e verifique rapidamente o estado da
+            conexão com o banco de dados.
+          </p>
+        </header>
 
-      <div className={styles.updateInfo}>
-        <div className={styles.metaRow}>
-          <span className={styles.label}>Última atualização:</span>
-          <span className={styles.metaValue}>{updatedAtText}</span>
-          <span className={styles.metaDivider} />
-        </div>
-
-        <div className={styles.actions}>
-          <button
-            type="button"
-            className={styles.buttonPrimary}
-            onClick={onRefresh}
-            title="Atualizar agora"
-          >
-            Atualizar
-          </button>
-        </div>
-      </div>
-
-      <section className={styles.statusSection}>
-        <div className={styles.sectionTitle}>
-          <span className={`${styles.badge} ${badgeClass}`}>
-            <span className={styles.dot} aria-hidden="true" />
-            {getHealthLabel(health)}
-          </span>
-          <span className={styles.sectionTitleText}>Database</span>
-        </div>
-
-        {isLoading ? (
-          <div className={styles.loadingText}>Carregando…</div>
-        ) : (
-          <div className={styles.grid}>
-            <div className={styles.statusItem}>
-              <span className={styles.itemLabel}>Versão</span>
-              <span className={styles.value}>
-                {data?.dependencies?.database?.version ?? "—"}
-              </span>
-            </div>
-            <div className={styles.statusItem}>
-              <span className={styles.itemLabel}>Conexões abertas</span>
-              <span className={styles.value}>
-                {data?.dependencies?.database?.opened_connections ?? "—"}
-              </span>
-            </div>
-            <div className={styles.statusItem}>
-              <span className={styles.itemLabel}>Conexões máximas</span>
-              <span className={styles.value}>
-                {data?.dependencies?.database?.max_connections ?? "—"}
-              </span>
-            </div>
+        <div className={styles.metaCard}>
+          <div className={styles.metaRow}>
+            <span className={styles.metaLabel}>Última atualização</span>
+            <strong className={styles.metaValue}>{updatedAtText}</strong>
           </div>
-        )}
+
+          <div className={styles.metaActions}>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={handleRefresh}
+              title="Atualizar agora"
+            >
+              Atualizar
+            </button>
+          </div>
+        </div>
+
+        <section className={styles.statusCard}>
+          <div className={styles.statusHeader}>
+            <span className={`${styles.statusBadge} ${badgeVariantClass}`}>
+              <span className={styles.statusDot} aria-hidden="true" />
+              {getHealthLabel(databaseHealth)}
+            </span>
+
+            <h2 className={styles.statusTitle}>Database</h2>
+          </div>
+
+          {isLoading ? (
+            <p className={styles.loadingMessage}>Carregando...</p>
+          ) : (
+            <div className={styles.metricsGrid}>
+              <div className={styles.metricCard}>
+                <span className={styles.metricLabel}>Versão</span>
+                <strong className={styles.metricValue}>
+                  {data?.dependencies?.database?.version ?? "—"}
+                </strong>
+              </div>
+
+              <div className={styles.metricCard}>
+                <span className={styles.metricLabel}>Conexões abertas</span>
+                <strong className={styles.metricValue}>
+                  {data?.dependencies?.database?.opened_connections ?? "—"}
+                </strong>
+              </div>
+
+              <div className={styles.metricCard}>
+                <span className={styles.metricLabel}>Conexões máximas</span>
+                <strong className={styles.metricValue}>
+                  {data?.dependencies?.database?.max_connections ?? "—"}
+                </strong>
+              </div>
+            </div>
+          )}
+        </section>
       </section>
-    </div>
+    </main>
   );
 }
