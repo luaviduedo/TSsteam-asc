@@ -1,21 +1,12 @@
+// app/layout.tsx
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import SteamBackground from "./components/ui/steam-background";
+import SiteHeader from "./components/ui/site-header";
 
 export const metadata: Metadata = {
   title: "Steam ASC",
-  description: "Steam Achievements",
+  description: "Sua central para jogos, conquistas e 100% na Steam.",
 };
 
 export default function RootLayout({
@@ -24,17 +15,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <header className="siteHeader">
-          <div className="siteHeaderInner">
-            <Link href="/" className="siteTitle">
-              Steam ASC
-            </Link>
+    <html lang="pt-BR">
+      <body className="bg-[#0b141d] text-white antialiased">
+        <div className="relative min-h-screen overflow-hidden">
+          <SteamBackground />
+          <div className="relative z-10">
+            <SiteHeader />
+            {children}
           </div>
-        </header>
-
-        {children}
+        </div>
       </body>
     </html>
   );
