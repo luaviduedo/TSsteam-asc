@@ -1,84 +1,33 @@
-:root {
-  --color1: #171d25;
-  --color2: #192636;
-  --color3: #1f3052;
-  --color4: #1f3052;
-  --color5: #ffffff;
-  --color6: #354150;
+/* app/globals.css */
+@import "tailwindcss";
 
-  --bg: var(--color1);
-  --card: rgba(31, 48, 82, 0.1);
-  --cardBorder: rgba(31, 48, 82, 0.25);
-
-  --text: var(--color5);
-  --muted: rgba(255, 255, 255, 0.75);
-
-  --accent: var(--color3);
-  --accent-light: var(--color4);
-
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    Helvetica,
-    Arial;
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(25, 84, 122, 0.16),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(85, 182, 255, 0.07),
+      transparent 30%
+    ),
+    linear-gradient(180deg, #0b141d 0%, #0a1118 100%);
+  color: #ffffff;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 a {
   color: inherit;
   text-decoration: none;
-}
-
-/* HEADER */
-
-.siteHeader {
-  width: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 60;
-
-  background: linear-gradient(
-    180deg,
-    rgba(31, 48, 82, 0.06),
-    rgba(31, 48, 82, 0.03)
-  );
-
-  border-bottom: 1px solid var(--cardBorder);
-  backdrop-filter: blur(6px);
-}
-
-.siteHeaderInner {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 10px 18px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.siteTitle {
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
 }
