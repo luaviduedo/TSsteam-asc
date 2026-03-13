@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getValidSteamGamesCache,
+  saveSteamGamesCache,
+  withLiveMeta,
+  type SteamGamesResponse,
+} from "@/lib/steam-games-cache";
+import { resolveSteamId64FromInput } from "@/lib/steam-resolver";
 
 type SteamApiKey = {
   label: string;
@@ -52,6 +59,7 @@ type SteamGameResponseItem = {
   hardest_achievement_percent: number | null;
   player_unlocked_achievements: number;
   total_game_achievements: number;
+  completion_percentage: number | null;
   completion_difficulty_rank: number | null;
   error: string | null;
 };
@@ -62,12 +70,11 @@ const STEAM_API_KEYS: SteamApiKey[] = [
   { label: "STEAM_API_KEY_3", value: process.env.STEAM_API_KEY_3 || "" },
 ].filter((item) => item.value.trim() !== "");
 
-const STEAM_ID64_REGEX = /^\d{17}$/;
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_CONCURRENCY = 5;
 
-function isValidSteamId64(value: unknown): value is string {
-  return typeof value === "string" && STEAM_ID64_REGEX.test(value.trim());
+function parseForceRefresh(value: unknown): boolean {
+  return value === true;
 }
 
 async function fetchJsonWithTimeout<T>(
@@ -229,6 +236,16 @@ async function analyzeGame(
       (achievement) => achievement.achieved === 1,
     ).length;
 
+    const completionPercentage =
+      totalGameAchievements > 0
+        ? Number(
+            (
+              (playerUnlockedAchievements / totalGameAchievements) *
+              100
+            ).toFixed(2),
+          )
+        : null;
+
     return {
       appid: game.appid,
       name: game.name?.trim() || `App ${game.appid}`,
@@ -236,6 +253,7 @@ async function analyzeGame(
       hardest_achievement_percent: hardestAchievementPercent,
       player_unlocked_achievements: playerUnlockedAchievements,
       total_game_achievements: totalGameAchievements,
+      completion_percentage: completionPercentage,
       completion_difficulty_rank: null,
       error: null,
     };
@@ -247,6 +265,7 @@ async function analyzeGame(
       hardest_achievement_percent: null,
       player_unlocked_achievements: 0,
       total_game_achievements: 0,
+      completion_percentage: null,
       completion_difficulty_rank: null,
       error: error instanceof Error ? error.message : "Erro desconhecido",
     };
@@ -278,6 +297,59 @@ async function mapWithConcurrencyLimit<T, R>(
   return results;
 }
 
+async function buildFreshSteamGamesResponse(
+  steamId64: string,
+): Promise<SteamGamesResponse> {
+  const ownedGames = await getOwnedGames(steamId64);
+
+  if (!ownedGames.length) {
+    return {
+      steam_id_64: steamId64,
+      total_games_found: 0,
+      total_games_processed: 0,
+      games: [],
+      message: "Nenhum jogo encontrado para esse usuário.",
+    };
+  }
+
+  const processedGames = await mapWithConcurrencyLimit(
+    ownedGames,
+    MAX_CONCURRENCY,
+    (game) => analyzeGame(game, steamId64),
+  );
+
+  const rankedGames = processedGames
+    .filter(
+      (game): game is SteamGameResponseItem =>
+        game !== null &&
+        game.hardest_achievement_percent !== null &&
+        game.total_game_achievements > 0,
+    )
+    .sort((a, b) => {
+      const aPercent = a.hardest_achievement_percent ?? -1;
+      const bPercent = b.hardest_achievement_percent ?? -1;
+
+      if (bPercent !== aPercent) {
+        return bPercent - aPercent;
+      }
+
+      return a.total_game_achievements - b.total_game_achievements;
+    })
+    .map((game, index) => ({
+      ...game,
+      completion_difficulty_rank: index + 1,
+    }));
+
+  return {
+    steam_id_64: steamId64,
+    total_games_found: ownedGames.length,
+    total_games_processed: rankedGames.length,
+    games: rankedGames,
+    message:
+      "Jogos com dados de conquistas foram ordenados da maior para a menor porcentagem da conquista mais difícil. Jogos difíceis também são incluídos. (Se as conquistas do jogador aparecer '0' verifique se seus jogos não estão privados!)",
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
@@ -289,72 +361,86 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const steamId64 = body.req_steam_id_64;
-
-    if (!isValidSteamId64(steamId64)) {
-      return NextResponse.json(
-        {
-          error:
-            "steamId64 inválido. Envie em req_steam_id_64 um SteamID64 com 17 dígitos.",
-        },
-        { status: 400 },
-      );
-    }
-
-    const normalizedSteamId64 = steamId64.trim();
-    const ownedGames = await getOwnedGames(normalizedSteamId64);
-
-    if (!ownedGames.length) {
-      return NextResponse.json(
-        {
-          steam_id_64: normalizedSteamId64,
-          total_games_found: 0,
-          total_games_processed: 0,
-          concurrency_limit: MAX_CONCURRENCY,
-          games: [],
-          message: "Nenhum jogo encontrado para esse usuário.",
-        },
-        { status: 200 },
-      );
-    }
-
-    const processedGames = await mapWithConcurrencyLimit(
-      ownedGames,
-      MAX_CONCURRENCY,
-      (game) => analyzeGame(game, normalizedSteamId64),
+    const normalizedSteamId64 = await resolveSteamId64FromInput(
+      body.req_steam_id_64,
     );
+    const forceRefresh = parseForceRefresh(body.force_refresh);
 
-    const rankedGames = processedGames
-      .filter(
-        (game): game is SteamGameResponseItem =>
-          game !== null &&
-          game.hardest_achievement_percent !== null &&
-          game.total_game_achievements > 0,
-      )
-      .sort((a, b) => {
-        const aPercent = a.hardest_achievement_percent ?? -1;
-        const bPercent = b.hardest_achievement_percent ?? -1;
+    if (!forceRefresh) {
+      const cachedResponse = await getValidSteamGamesCache(normalizedSteamId64);
 
-        if (bPercent !== aPercent) {
-          return bPercent - aPercent;
-        }
+      if (cachedResponse) {
+        return NextResponse.json(
+          {
+            ...cachedResponse,
+            concurrency_limit: MAX_CONCURRENCY,
+          },
+          { status: 200 },
+        );
+      }
+    }
 
-        return a.total_game_achievements - b.total_game_achievements;
-      })
-      .map((game, index) => ({
-        ...game,
-        completion_difficulty_rank: index + 1,
-      }));
+    const freshResponse =
+      await buildFreshSteamGamesResponse(normalizedSteamId64);
+    const responseWithMeta = withLiveMeta(freshResponse, forceRefresh);
+
+    await saveSteamGamesCache(responseWithMeta);
 
     return NextResponse.json(
       {
-        steam_id_64: normalizedSteamId64,
-        total_games_found: ownedGames.length,
-        total_games_processed: rankedGames.length,
+        ...responseWithMeta,
         concurrency_limit: MAX_CONCURRENCY,
-        games: rankedGames,
-        message:
-          "Jogos com dados de conquistas foram ordenados da maior para a menor porcentagem da conquista mais difícil. Jogos difíceis também são incluídos. (Se as conquistas do jogador aparecer '0' verifique se seus jogos não estão privados!)",
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Erro interno ao buscar jogos da Steam.",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const rawInput =
+      request.nextUrl.searchParams.get("steam_id_64")?.trim() ??
+      request.nextUrl.searchParams.get("input")?.trim() ??
+      "";
+
+    const normalizedSteamId64 = await resolveSteamId64FromInput(rawInput);
+    const forceRefresh =
+      request.nextUrl.searchParams.get("force_refresh") === "true";
+
+    if (!forceRefresh) {
+      const cachedResponse = await getValidSteamGamesCache(normalizedSteamId64);
+
+      if (cachedResponse) {
+        return NextResponse.json(
+          {
+            ...cachedResponse,
+            concurrency_limit: MAX_CONCURRENCY,
+          },
+          { status: 200 },
+        );
+      }
+    }
+
+    const freshResponse =
+      await buildFreshSteamGamesResponse(normalizedSteamId64);
+    const responseWithMeta = withLiveMeta(freshResponse, forceRefresh);
+
+    await saveSteamGamesCache(responseWithMeta);
+
+    return NextResponse.json(
+      {
+        ...responseWithMeta,
+        concurrency_limit: MAX_CONCURRENCY,
       },
       { status: 200 },
     );
