@@ -3,7 +3,6 @@
 import {
   Activity,
   ArrowRight,
-  Shield,
   ShieldCheck,
   Sparkles,
   Trophy,
