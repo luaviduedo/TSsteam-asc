@@ -279,12 +279,8 @@
           "name": "steam_games_cache_items_cache_id_steam_games_cache_id_fk",
           "tableFrom": "steam_games_cache_items",
           "tableTo": "steam_games_cache",
-          "columnsFrom": [
-            "cache_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["cache_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
