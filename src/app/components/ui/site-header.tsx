@@ -1,4 +1,3 @@
-// components/ui/site-header.tsx
 "use client";
 
 import { Trophy } from "lucide-react";
@@ -7,7 +6,7 @@ import Link from "next/link";
 const navItems = [
   { href: "/", label: "Início" },
   { href: "/steam_games", label: "Jogos Para 100%" },
-  { href: "/user", label: "Usuário" },
+  { href: "/users", label: "Usuários" },
   { href: "/status", label: "Status" },
 ];
 
@@ -46,7 +45,7 @@ export default function SiteHeader() {
         </nav>
 
         <a
-          href="/steam_games"
+          href="/users"
           className="inline-flex h-10 items-center justify-center rounded-lg border border-sky-300/20 bg-[linear-gradient(180deg,#2379ad_0%,#184f73_100%)] px-4 text-sm font-semibold text-white shadow-[0_14px_32px_rgba(10,31,48,0.36),inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:brightness-110"
         >
           Ver ranking

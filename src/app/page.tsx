@@ -1,15 +1,14 @@
-// app/page.tsx
 "use client";
 
 import {
   Activity,
   ArrowRight,
-  Search,
+  Shield,
   ShieldCheck,
   Sparkles,
   Trophy,
-  UserRound,
 } from "lucide-react";
+import Link from "next/link";
 
 const highlightCards = [
   {
@@ -22,7 +21,7 @@ const highlightCards = [
     title: "Perfil Steam",
     description:
       "Consulte dados públicos do jogador e visualize rapidamente informações importantes.",
-    icon: UserRound,
+    icon: ShieldCheck,
   },
   {
     title: "Status da aplicação",
@@ -42,23 +41,16 @@ const actionCards = [
     primary: true,
   },
   {
-    href: "/user",
-    title: "Ver Usuário",
-    description: "Explore informações públicas de perfis Steam.",
-    icon: UserRound,
-  },
-  {
-    href: "https://steamid.xyz",
-    title: "Ver Meu ID 64",
-    description: "Abra uma ferramenta externa para localizar seu Steam ID.",
-    icon: Search,
-    external: true,
+    href: "/users",
+    title: "Ver usuários",
+    description: "Vejo a lista de usuários salva no banco de dados.",
+    icon: ShieldCheck,
   },
   {
     href: "/status",
     title: "Ver Status",
     description: "Cheque o funcionamento atual da aplicação.",
-    icon: ShieldCheck,
+    icon: Activity,
   },
 ];
 
@@ -100,20 +92,26 @@ export default function Home() {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
+              <Link
                 href="/steam_games"
                 className="group inline-flex h-14 items-center justify-center gap-3 rounded-md border border-sky-300/25 bg-[linear-gradient(180deg,#2379ad_0%,#184f73_100%)] px-6 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(10,31,48,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] transition duration-300 hover:-translate-y-0.5 hover:brightness-110"
               >
                 <span>Jogos Para 100%</span>
                 <ArrowRight className="h-4 w-4 transition duration-300 group-hover:translate-x-0.5" />
-              </a>
+              </Link>
 
-              <a
-                href="/user"
+              <Link
+                href="/users"
                 className="inline-flex h-14 items-center justify-center gap-3 rounded-md border border-white/8 bg-[#101923]/90 px-6 text-sm font-semibold text-white/88 shadow-[0_12px_32px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.04)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#152434]"
               >
-                Ver Usuário
-              </a>
+                Ver Usuários
+              </Link>
+              <Link
+                href="/status"
+                className="inline-flex h-14 items-center justify-center gap-3 rounded-md border border-white/8 bg-[#101923]/90 px-6 text-sm font-semibold text-white/88 shadow-[0_12px_32px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.04)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#152434]"
+              >
+                Ver Status
+              </Link>
             </div>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -249,14 +247,12 @@ export default function Home() {
           </div>
         </header>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-4">
+        <section className="mt-6 grid gap-4 md:grid-cols-3">
           {actionCards.map(
-            ({ href, title, description, icon: Icon, primary, external }) => (
-              <a
+            ({ href, title, description, icon: Icon, primary }) => (
+              <Link
                 key={title}
                 href={href}
-                target={external ? "_blank" : undefined}
-                rel={external ? "noreferrer" : undefined}
                 className={`group relative overflow-hidden rounded-xl border p-6 shadow-[0_18px_50px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-2xl transition duration-300 hover:-translate-y-1 ${
                   primary
                     ? "border-sky-300/20 bg-[linear-gradient(180deg,#2379ad_0%,#184f73_100%)] text-white"
@@ -281,7 +277,7 @@ export default function Home() {
                     {description}
                   </p>
                 </div>
-              </a>
+              </Link>
             ),
           )}
         </section>
