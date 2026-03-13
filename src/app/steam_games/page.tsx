@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   Gamepad2,
   Home as HomeIcon,
+  RefreshCcw,
   Search,
   ShieldAlert,
   Sparkles,
@@ -34,6 +35,12 @@ type SteamGamesResponse = {
   games: SteamGame[];
   message?: string;
   error?: string;
+  meta?: {
+    source?: "cache" | "live";
+    cached_at?: string;
+    expires_at?: string;
+    force_refresh?: boolean;
+  };
 };
 
 function formatPlaytime(minutes: number) {
@@ -90,26 +97,40 @@ function getDifficultyStyles(percent: number | string | null) {
   }
 }
 
+function validateSteamInput(value: string) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return "Digite um SteamID64, vanity name ou URL do perfil Steam.";
+  }
+
+  return "";
+}
+
 export default function Home() {
-  const [steamId64, setSteamId64] = useState("");
+  const [steamInput, setSteamInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [result, setResult] = useState<SteamGamesResponse | null>(null);
   const [error, setError] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function fetchGames(forceRefresh = false) {
+    const normalizedSteamInput = steamInput.trim();
+    const validationError = validateSteamInput(normalizedSteamInput);
 
-    const normalizedSteamId64 = steamId64.trim();
-
-    setLoading(true);
-    setError("");
-    setResult(null);
-
-    if (!/^\d{17}$/.test(normalizedSteamId64)) {
-      setError("Digite um SteamID64 válido com 17 dígitos.");
-      setLoading(false);
+    if (validationError) {
+      setError(validationError);
       return;
     }
+
+    if (forceRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+      setResult(null);
+    }
+
+    setError("");
 
     try {
       const response = await fetch("/api/v1/steam_games", {
@@ -118,7 +139,8 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          req_steam_id_64: normalizedSteamId64,
+          req_steam_id_64: normalizedSteamInput,
+          force_refresh: forceRefresh,
         }),
       });
 
@@ -133,12 +155,40 @@ export default function Home() {
       setError(err instanceof Error ? err.message : "Erro desconhecido.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await fetchGames(false);
+  }
+
+  async function handleForceRefresh() {
+    await fetchGames(true);
   }
 
   return (
     <main className="relative min-h-screen w-full overflow-hidden text-white">
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1560px] flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8 2xl:px-10">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/85 shadow-[0_10px_24px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Voltar
+          </Link>
+
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full border border-sky-300/20 bg-sky-300/10 px-4 py-2 text-sm font-medium text-sky-100 shadow-[0_10px_24px_rgba(18,89,138,0.16),inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:-translate-y-0.5 hover:bg-sky-300/15"
+          >
+            <HomeIcon className="h-4 w-4" />
+            Início
+          </Link>
+        </div>
+
         <header className="relative overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,28,39,0.96),rgba(11,20,29,0.965))] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:p-7">
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_78%,rgba(125,211,252,0.04))]" />
           <div className="pointer-events-none absolute right-[-90px] top-[-90px] h-[220px] w-[220px] rounded-full bg-sky-400/8 blur-[100px]" />
@@ -163,9 +213,9 @@ export default function Home() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-sm leading-7 text-white/62 sm:text-base">
-                Veja quais jogos da biblioteca parecem mais tranquilos de
-                completar, com foco em dificuldade, progresso e potencial de
-                conquista.
+                Cole seu SteamID64, vanity name ou a URL do perfil Steam para
+                ranquear os jogos da biblioteca com base na dificuldade
+                percebida das conquistas.
               </p>
             </div>
 
@@ -186,10 +236,16 @@ export default function Home() {
                 </div>
               </div>
 
-              <p className="relative mt-3 text-sm leading-6 text-white/58">
-                Digite um SteamID64 para ranquear os jogos da biblioteca com
-                base na dificuldade percebida das conquistas.
-              </p>
+              <div className="relative mt-3 space-y-1 text-sm leading-6 text-white/58">
+                <p>Exemplos aceitos:</p>
+                <p className="break-all text-white/48">
+                  76561198145040749 •
+                  steamcommunity.com/profiles/76561198145040749
+                </p>
+                <p className="break-all text-white/48">
+                  steamcommunity.com/id/seu-usuario • seu-usuario
+                </p>
+              </div>
             </div>
           </div>
         </header>
@@ -197,26 +253,22 @@ export default function Home() {
         <section className="mt-5 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.94),rgba(12,20,28,0.98))] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl sm:p-5">
           <form
             onSubmit={handleSubmit}
-            className="grid gap-3 lg:grid-cols-[1fr_auto]"
+            className="grid gap-3 lg:grid-cols-[1fr_auto_auto]"
           >
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
               <input
                 type="text"
-                inputMode="numeric"
-                value={steamId64}
-                onChange={(event) =>
-                  setSteamId64(event.target.value.replace(/\D/g, ""))
-                }
-                placeholder="Digite o SteamID64"
-                maxLength={17}
+                value={steamInput}
+                onChange={(event) => setSteamInput(event.target.value)}
+                placeholder="Digite SteamID64, vanity name ou URL do perfil Steam"
                 className="h-14 w-full rounded-xl border border-white/10 bg-[#0d1822] pl-11 pr-4 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none transition placeholder:text-white/30 focus:border-sky-300/30 focus:bg-[#112131]"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || refreshing}
               className="inline-flex h-14 items-center justify-center gap-3 rounded-xl border border-sky-300/30 bg-[linear-gradient(180deg,#2379ad_0%,#184f73_100%)] px-6 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(10,31,48,0.45),inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? (
@@ -227,6 +279,18 @@ export default function Home() {
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleForceRefresh}
+              disabled={loading || refreshing}
+              className="inline-flex h-14 items-center justify-center gap-3 rounded-xl border border-white/10 bg-[linear-gradient(180deg,rgba(17,27,37,0.94),rgba(12,20,28,0.98))] px-6 text-sm font-semibold text-white/88 shadow-[0_18px_50px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:-translate-y-0.5 hover:border-sky-300/15 hover:text-white disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <RefreshCcw
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              {refreshing ? "Atualizando..." : "Atualizar ranking"}
             </button>
           </form>
 
@@ -244,7 +308,7 @@ export default function Home() {
               <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
                 <div className="rounded-2xl border border-white/8 bg-[#0d1822] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:p-5">
                   <span className="text-[11px] uppercase tracking-[0.18em] text-white/35">
-                    SteamID64
+                    SteamID64 resolvido
                   </span>
                   <strong className="mt-2 block break-all text-lg font-semibold tracking-[-0.03em] text-white sm:text-xl">
                     {result.steam_id_64}
@@ -253,6 +317,13 @@ export default function Home() {
                   {result.message && (
                     <p className="mt-3 text-sm leading-6 text-white/58">
                       {result.message}
+                    </p>
+                  )}
+
+                  {result.meta && (
+                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-white/38">
+                      origem:{" "}
+                      {result.meta.source === "cache" ? "cache" : "live"}
                     </p>
                   )}
                 </div>
