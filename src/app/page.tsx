@@ -3,6 +3,7 @@
 import {
   Activity,
   ArrowRight,
+  Github,
   ShieldCheck,
   Sparkles,
   Trophy,
@@ -42,7 +43,7 @@ const actionCards = [
   {
     href: "/users",
     title: "Ver usuários",
-    description: "Vejo a lista de usuários salva no banco de dados.",
+    description: "Veja a lista de usuários salva no banco de dados.",
     icon: ShieldCheck,
   },
   {
@@ -50,6 +51,13 @@ const actionCards = [
     title: "Ver Status",
     description: "Cheque o funcionamento atual da aplicação.",
     icon: Activity,
+  },
+  {
+    href: "https://github.com/luaviduedo/TSsteam-asc",
+    title: "Repositório GitHub",
+    description: "Acesse o código-fonte completo do projeto Steam ASC.",
+    icon: Github,
+    external: true,
   },
 ];
 
@@ -243,12 +251,14 @@ export default function Home() {
           </div>
         </header>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-3">
+        <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {actionCards.map(
-            ({ href, title, description, icon: Icon, primary }) => (
+            ({ href, title, description, icon: Icon, primary, external }) => (
               <Link
                 key={title}
                 href={href}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noopener noreferrer" : undefined}
                 className={`group relative overflow-hidden rounded-xl border p-6 shadow-[0_18px_50px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-2xl transition duration-300 hover:-translate-y-1 ${
                   primary
                     ? "border-sky-300/20 bg-[linear-gradient(180deg,#2379ad_0%,#184f73_100%)] text-white"
@@ -272,6 +282,11 @@ export default function Home() {
                   >
                     {description}
                   </p>
+                </div>
+
+                <div className="relative mt-8 inline-flex items-center gap-2 text-sm font-medium text-sky-200">
+                  <span>{external ? "Abrir repositório" : "Abrir página"}</span>
+                  <ArrowRight className="h-4 w-4 transition duration-300 group-hover:translate-x-0.5" />
                 </div>
               </Link>
             ),
