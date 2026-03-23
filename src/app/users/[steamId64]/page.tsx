@@ -7,8 +7,11 @@ import {
   Gamepad2,
   ShieldAlert,
   Trophy,
+  Trash2,
   UserRound,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type UserProfileResponse = {
   profile: {
@@ -85,8 +88,11 @@ export default function UserProfilePage({
 }: {
   params: Promise<{ steamId64: string }>;
 }) {
+  const router = useRouter();
+
   const [steamId64, setSteamId64] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [result, setResult] = useState<UserProfileResponse | null>(null);
   const [error, setError] = useState("");
 
@@ -123,17 +129,48 @@ export default function UserProfilePage({
     void loadProfile();
   }, [params]);
 
+  async function handleDeleteUser() {
+    if (!steamId64 || isDeleting) return;
+
+    const confirmed = window.confirm(
+      "Tem certeza que deseja excluir este usuário do banco de dados?",
+    );
+
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/v1/users/${steamId64}`, {
+        method: "DELETE",
+      });
+
+      const data = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao excluir usuário.");
+      }
+
+      router.push("/users");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao excluir usuário.");
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <main className="relative min-h-screen w-full text-white">
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1560px] flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8 2xl:px-10">
-        <div className="mb-5">
-          <a
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Link
             href="/users"
             className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/85 transition hover:bg-white/[0.08]"
           >
             <ChevronLeft className="h-4 w-4" />
             Voltar para usuários
-          </a>
+          </Link>
         </div>
 
         {error && (
@@ -178,15 +215,30 @@ export default function UserProfilePage({
                     perfil salvo
                   </div>
 
-                  <h1 className="mt-4 break-words pb-1 text-4xl font-semibold leading-[1.08] tracking-[-0.04em] text-white sm:text-5xl">
-                    {result.profile.personaname || "Usuário sem nome em cache"}
-                  </h1>
+                  <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="min-w-0">
+                      <h1 className="break-words pb-1 text-4xl font-semibold leading-[1.08] tracking-[-0.04em] text-white sm:text-5xl">
+                        {result.profile.personaname ||
+                          "Usuário sem nome em cache"}
+                      </h1>
 
-                  {result.profile.message && (
-                    <p className="mt-4 max-w-3xl text-sm leading-7 text-white/58">
-                      {result.profile.message}
-                    </p>
-                  )}
+                      {result.profile.message && (
+                        <p className="mt-4 max-w-3xl text-sm leading-7 text-white/58">
+                          {result.profile.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleDeleteUser}
+                      disabled={isDeleting || !steamId64}
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-200 transition hover:border-rose-300/30 hover:bg-rose-400/15 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {isDeleting ? "Excluindo..." : "Excluir do banco"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </header>

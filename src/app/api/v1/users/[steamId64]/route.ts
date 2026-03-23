@@ -222,3 +222,69 @@ export async function GET(
     );
   }
 }
+
+interface RouteContext {
+  params: Promise<{
+    steamId64: string;
+  }>;
+}
+
+export async function DELETE(_: Request, context: RouteContext) {
+  try {
+    const { steamId64 } = await context.params;
+
+    if (!steamId64 || typeof steamId64 !== "string") {
+      return NextResponse.json(
+        { error: "SteamID64 inválido." },
+        { status: 400 },
+      );
+    }
+
+    const result = await db.transaction(async (tx) => {
+      const deletedUsers = await tx
+        .delete(steamUsersCache)
+        .where(eq(steamUsersCache.steamId64, steamId64))
+        .returning({
+          steamId64: steamUsersCache.steamId64,
+        });
+
+      const deletedCaches = await tx
+        .delete(steamGamesCache)
+        .where(eq(steamGamesCache.steamId64, steamId64))
+        .returning({
+          steamId64: steamGamesCache.steamId64,
+        });
+
+      return {
+        deletedUsers,
+        deletedCaches,
+      };
+    });
+
+    const deletedAnything =
+      result.deletedUsers.length > 0 || result.deletedCaches.length > 0;
+
+    if (!deletedAnything) {
+      return NextResponse.json(
+        { error: "Usuário não encontrado no banco." },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        message: "Usuário excluído com sucesso.",
+        deletedSteamId64: steamId64,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error("Erro ao excluir usuário:", error);
+
+    return NextResponse.json(
+      { error: "Erro interno ao excluir usuário." },
+      { status: 500 },
+    );
+  }
+}
