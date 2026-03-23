@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import db from "@/drizzle/db";
+import { eq } from "drizzle-orm";
 import {
   getValidSteamGamesCache,
   saveSteamGamesCache,
@@ -6,6 +8,7 @@ import {
   type SteamGamesResponse,
 } from "@/lib/steam-games-cache";
 import { resolveSteamId64FromInput } from "@/lib/steam-resolver";
+import { steamUsersCache } from "@/drizzle/schema";
 
 type SteamApiKey = {
   label: string;
@@ -49,6 +52,18 @@ type PlayerAchievementsApiResponse = {
     achievements?: PlayerAchievement[];
     success?: boolean;
     error?: string;
+  };
+};
+
+type PlayerSummary = {
+  steamid: string;
+  personaname?: string;
+  avatarfull?: string;
+};
+
+type PlayerSummariesApiResponse = {
+  response?: {
+    players?: PlayerSummary[];
   };
 };
 
@@ -131,6 +146,70 @@ async function fetchWithSteamApiKeys<T>(
   throw new Error(
     `Falha ao consumir Steam API com todas as chaves. ${errors.join(" | ")}`,
   );
+}
+
+async function getSteamProfile(
+  steamId64: string,
+): Promise<PlayerSummary | null> {
+  const data = await fetchWithSteamApiKeys<PlayerSummariesApiResponse>(
+    (apiKey) => {
+      const url = new URL(
+        "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/",
+      );
+
+      url.searchParams.set("key", apiKey);
+      url.searchParams.set("steamids", steamId64);
+
+      return url.toString();
+    },
+  );
+
+  const player = data.response?.players?.[0];
+
+  if (!player) {
+    return null;
+  }
+
+  return player;
+}
+
+async function upsertSteamUserProfile(steamId64: string): Promise<void> {
+  const profile = await getSteamProfile(steamId64);
+
+  if (!profile) {
+    return;
+  }
+
+  const existingUser = await db.query.steamUsersCache.findFirst({
+    where: eq(steamUsersCache.steamId64, steamId64),
+  });
+
+  if (existingUser) {
+    await db
+      .update(steamUsersCache)
+      .set({
+        personaname: profile.personaname?.trim() || null,
+        avatarfull: profile.avatarfull?.trim() || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(steamUsersCache.steamId64, steamId64));
+
+    return;
+  }
+
+  await db.insert(steamUsersCache).values({
+    steamId64,
+    personaname: profile.personaname?.trim() || null,
+    avatarfull: profile.avatarfull?.trim() || null,
+  });
+}
+
+async function ensureSteamUserProfileSaved(steamId64: string): Promise<void> {
+  try {
+    await upsertSteamUserProfile(steamId64);
+  } catch (error) {
+    console.error("Erro ao salvar perfil do usuário no cache:", error);
+  }
 }
 
 async function getOwnedGames(steamId64: string): Promise<OwnedGame[]> {
@@ -366,6 +445,8 @@ export async function POST(request: NextRequest) {
     );
     const forceRefresh = parseForceRefresh(body.force_refresh);
 
+    await ensureSteamUserProfileSaved(normalizedSteamId64);
+
     if (!forceRefresh) {
       const cachedResponse = await getValidSteamGamesCache(normalizedSteamId64);
 
@@ -385,6 +466,7 @@ export async function POST(request: NextRequest) {
     const responseWithMeta = withLiveMeta(freshResponse, forceRefresh);
 
     await saveSteamGamesCache(responseWithMeta);
+    await ensureSteamUserProfileSaved(normalizedSteamId64);
 
     return NextResponse.json(
       {
@@ -417,6 +499,8 @@ export async function GET(request: NextRequest) {
     const forceRefresh =
       request.nextUrl.searchParams.get("force_refresh") === "true";
 
+    await ensureSteamUserProfileSaved(normalizedSteamId64);
+
     if (!forceRefresh) {
       const cachedResponse = await getValidSteamGamesCache(normalizedSteamId64);
 
@@ -436,6 +520,7 @@ export async function GET(request: NextRequest) {
     const responseWithMeta = withLiveMeta(freshResponse, forceRefresh);
 
     await saveSteamGamesCache(responseWithMeta);
+    await ensureSteamUserProfileSaved(normalizedSteamId64);
 
     return NextResponse.json(
       {
