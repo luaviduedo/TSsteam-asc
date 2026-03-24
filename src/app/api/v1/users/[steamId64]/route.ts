@@ -1,159 +1,33 @@
 import { eq } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+
 import db from "@/drizzle/db";
 import {
   steamGamesCache,
   steamGamesCacheItems,
   steamUsersCache,
 } from "@/drizzle/schema";
-
-type SteamApiKey = {
-  label: string;
-  value: string;
-};
-
-type SteamPlayer = {
-  personaname?: string;
-  avatarfull?: string;
-};
-
-type PlayerSummariesApiResponse = {
-  response?: {
-    players?: SteamPlayer[];
-  };
-};
-
-const STEAM_API_KEYS: SteamApiKey[] = [
-  { label: "STEAM_API_KEY_1", value: process.env.STEAM_API_KEY_1 || "" },
-  { label: "STEAM_API_KEY_2", value: process.env.STEAM_API_KEY_2 || "" },
-  { label: "STEAM_API_KEY_3", value: process.env.STEAM_API_KEY_3 || "" },
-].filter((item) => item.value.trim() !== "");
+import { NotFoundError, ValidationError } from "@/lib/errors";
+import { failure, success } from "@/lib/http";
 
 const STEAM_ID64_REGEX = /^\d{17}$/;
-const REQUEST_TIMEOUT_MS = 10_000;
 
 function isValidSteamId64(value: string) {
   return STEAM_ID64_REGEX.test(value.trim());
 }
 
-async function fetchJsonWithTimeout<T>(
-  url: string,
-  init?: RequestInit,
-  timeoutMs = REQUEST_TIMEOUT_MS,
-): Promise<T> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      ...init,
-      signal: controller.signal,
-      headers: {
-        Accept: "application/json",
-        ...init?.headers,
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      const responseText = await response.text().catch(() => "");
-      throw new Error(
-        `HTTP ${response.status} - ${response.statusText} - ${responseText.slice(0, 300)}`,
-      );
-    }
-
-    return (await response.json()) as T;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+interface RouteContext {
+  params: Promise<{
+    steamId64: string;
+  }>;
 }
 
-async function fetchWithSteamApiKeys<T>(
-  buildUrl: (apiKey: string) => string,
-): Promise<T> {
-  if (STEAM_API_KEYS.length === 0) {
-    throw new Error("Nenhuma chave da Steam API foi configurada.");
-  }
-
-  const errors: string[] = [];
-
-  for (const apiKey of STEAM_API_KEYS) {
-    try {
-      return await fetchJsonWithTimeout<T>(buildUrl(apiKey.value));
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Erro desconhecido";
-      errors.push(`${apiKey.label}: ${message}`);
-    }
-  }
-
-  throw new Error(
-    `Falha ao consumir Steam API com todas as chaves. ${errors.join(" | ")}`,
-  );
-}
-
-async function getOrCreateSteamUserProfile(steamId64: string) {
-  const [cachedUser] = await db
-    .select()
-    .from(steamUsersCache)
-    .where(eq(steamUsersCache.steamId64, steamId64))
-    .limit(1);
-
-  if (cachedUser) {
-    return cachedUser;
-  }
-
-  const data = await fetchWithSteamApiKeys<PlayerSummariesApiResponse>(
-    (apiKey) => {
-      const url = new URL(
-        "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/",
-      );
-
-      url.searchParams.set("key", apiKey);
-      url.searchParams.set("steamids", steamId64);
-
-      return url.toString();
-    },
-  );
-
-  const player = data.response?.players?.[0];
-
-  if (!player) {
-    return null;
-  }
-
-  const [insertedUser] = await db
-    .insert(steamUsersCache)
-    .values({
-      steamId64,
-      personaname: player.personaname ?? null,
-      avatarfull: player.avatarfull ?? null,
-    })
-    .onConflictDoUpdate({
-      target: steamUsersCache.steamId64,
-      set: {
-        personaname: player.personaname ?? null,
-        avatarfull: player.avatarfull ?? null,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
-
-  return insertedUser;
-}
-
-export async function GET(
-  _request: NextRequest,
-  context: { params: Promise<{ steamId64: string }> },
-) {
+export async function GET(_: NextRequest, context: RouteContext) {
   try {
     const { steamId64 } = await context.params;
 
     if (!isValidSteamId64(steamId64)) {
-      return NextResponse.json(
-        { error: "SteamID64 inválido." },
-        { status: 400 },
-      );
+      throw new ValidationError("SteamID64 inválido.");
     }
 
     const [cache] = await db
@@ -163,13 +37,14 @@ export async function GET(
       .limit(1);
 
     if (!cache) {
-      return NextResponse.json(
-        { error: "Usuário não encontrado no banco de dados." },
-        { status: 404 },
-      );
+      throw new NotFoundError("Usuário não encontrado no banco de dados.");
     }
 
-    const userProfile = await getOrCreateSteamUserProfile(steamId64);
+    const [userProfile] = await db
+      .select()
+      .from(steamUsersCache)
+      .where(eq(steamUsersCache.steamId64, steamId64))
+      .limit(1);
 
     const games = await db
       .select()
@@ -177,7 +52,7 @@ export async function GET(
       .where(eq(steamGamesCacheItems.cacheId, cache.id))
       .orderBy(steamGamesCacheItems.completionDifficultyRank);
 
-    return NextResponse.json(
+    return success(
       {
         profile: {
           steam_id_64: steamId64,
@@ -208,36 +83,19 @@ export async function GET(
           error: game.error,
         })),
       },
-      { status: 200 },
+      200,
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Erro ao carregar perfil do usuário.",
-      },
-      { status: 500 },
-    );
+    return failure(error);
   }
-}
-
-interface RouteContext {
-  params: Promise<{
-    steamId64: string;
-  }>;
 }
 
 export async function DELETE(_: Request, context: RouteContext) {
   try {
     const { steamId64 } = await context.params;
 
-    if (!steamId64 || typeof steamId64 !== "string") {
-      return NextResponse.json(
-        { error: "SteamID64 inválido." },
-        { status: 400 },
-      );
+    if (!isValidSteamId64(steamId64)) {
+      throw new ValidationError("SteamID64 inválido.");
     }
 
     const result = await db.transaction(async (tx) => {
@@ -265,26 +123,18 @@ export async function DELETE(_: Request, context: RouteContext) {
       result.deletedUsers.length > 0 || result.deletedCaches.length > 0;
 
     if (!deletedAnything) {
-      return NextResponse.json(
-        { error: "Usuário não encontrado no banco." },
-        { status: 404 },
-      );
+      throw new NotFoundError("Usuário não encontrado no banco.");
     }
 
-    return NextResponse.json(
+    return success(
       {
         ok: true,
         message: "Usuário excluído com sucesso.",
         deletedSteamId64: steamId64,
       },
-      { status: 200 },
+      200,
     );
   } catch (error) {
-    console.error("Erro ao excluir usuário:", error);
-
-    return NextResponse.json(
-      { error: "Erro interno ao excluir usuário." },
-      { status: 500 },
-    );
+    return failure(error);
   }
 }

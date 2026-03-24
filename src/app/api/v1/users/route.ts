@@ -1,15 +1,23 @@
 import { desc, ilike, or, sql } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+
 import db from "@/drizzle/db";
 import {
   steamGamesCache,
   steamGamesCacheItems,
   steamUsersCache,
 } from "@/drizzle/schema";
+import { ValidationError } from "@/lib/errors";
+import { failure, success } from "@/lib/http";
 
 export async function GET(request: NextRequest) {
   try {
-    const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
+    const rawQuery = request.nextUrl.searchParams.get("q");
+    const query = rawQuery?.trim() ?? "";
+
+    if (rawQuery !== null && typeof rawQuery !== "string") {
+      throw new ValidationError("Parâmetro de busca inválido.");
+    }
 
     const users = await db
       .select({
@@ -51,20 +59,14 @@ export async function GET(request: NextRequest) {
       )
       .orderBy(desc(steamGamesCache.updatedAt));
 
-    return NextResponse.json(
+    return success(
       {
         total: users.length,
         users,
       },
-      { status: 200 },
+      200,
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Erro ao listar usuários.",
-      },
-      { status: 500 },
-    );
+    return failure(error);
   }
 }
