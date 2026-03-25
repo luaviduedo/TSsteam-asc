@@ -1,3 +1,5 @@
+import { AppError, SteamApiError, ValidationError } from "@/lib/errors";
+
 type SteamApiKey = {
   label: string;
   value: string;
@@ -11,6 +13,12 @@ type ResolveVanityUrlApiResponse = {
   };
 };
 
+type SerializedAppError = {
+  code: string;
+  message: string;
+  details: unknown | null;
+};
+
 const STEAM_API_KEYS: SteamApiKey[] = [
   { label: "STEAM_API_KEY_1", value: process.env.STEAM_API_KEY_1 || "" },
   { label: "STEAM_API_KEY_2", value: process.env.STEAM_API_KEY_2 || "" },
@@ -22,6 +30,20 @@ const REQUEST_TIMEOUT_MS = 10_000;
 
 export function isValidSteamId64(value: unknown): value is string {
   return typeof value === "string" && STEAM_ID64_REGEX.test(value.trim());
+}
+
+function serializeAppErrors(errors: AppError[]): SerializedAppError[] {
+  const serialized: SerializedAppError[] = [];
+
+  for (const currentError of errors) {
+    serialized.push({
+      code: currentError.code,
+      message: currentError.message,
+      details: currentError.details ?? null,
+    });
+  }
+
+  return serialized;
 }
 
 async function fetchJsonWithTimeout<T>(
@@ -45,12 +67,29 @@ async function fetchJsonWithTimeout<T>(
 
     if (!response.ok) {
       const responseText = await response.text().catch(() => "");
-      throw new Error(
-        `HTTP ${response.status} - ${response.statusText} - ${responseText.slice(0, 300)}`,
+
+      throw new SteamApiError(
+        `Falha ao consultar Steam API: HTTP ${response.status} - ${response.statusText}`,
+        responseText.slice(0, 300),
       );
     }
 
     return (await response.json()) as T;
+  } catch (error: unknown) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new SteamApiError(
+        "Tempo limite excedido ao consultar a Steam API.",
+      );
+    }
+
+    throw new SteamApiError(
+      "Erro inesperado ao consultar a Steam API.",
+      error instanceof Error ? error.message : error,
+    );
   } finally {
     clearTimeout(timeoutId);
   }
@@ -60,23 +99,33 @@ async function fetchWithSteamApiKeys<T>(
   buildUrl: (apiKey: string) => string,
 ): Promise<T> {
   if (STEAM_API_KEYS.length === 0) {
-    throw new Error("Nenhuma chave da Steam API foi configurada.");
+    throw new ValidationError("Nenhuma chave da Steam API foi configurada.");
   }
 
-  const errors: string[] = [];
+  const collectedErrors: AppError[] = [];
 
   for (const apiKey of STEAM_API_KEYS) {
     try {
       return await fetchJsonWithTimeout<T>(buildUrl(apiKey.value));
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Erro desconhecido";
-      errors.push(`${apiKey.label}: ${message}`);
+    } catch (error: unknown) {
+      if (error instanceof AppError) {
+        collectedErrors.push(error);
+      } else {
+        collectedErrors.push(
+          new SteamApiError(
+            "Erro desconhecido ao consultar Steam API.",
+            error instanceof Error ? error.message : error,
+          ),
+        );
+      }
     }
   }
 
-  throw new Error(
-    `Falha ao consumir Steam API com todas as chaves. ${errors.join(" | ")}`,
+  const serializedErrors = serializeAppErrors(collectedErrors);
+
+  throw new SteamApiError(
+    "Falha ao consumir Steam API com todas as chaves.",
+    serializedErrors,
   );
 }
 
@@ -132,7 +181,14 @@ async function resolveVanityToSteamId64(vanity: string): Promise<string> {
   const success = data.response?.success;
 
   if (success !== 1 || !steamId64 || !isValidSteamId64(steamId64)) {
-    throw new Error("Não foi possível resolver a URL personalizada da Steam.");
+    throw new ValidationError(
+      "Não foi possível resolver a URL personalizada da Steam.",
+      {
+        vanity,
+        steamResponseSuccess: success ?? null,
+        steamResponseMessage: data.response?.message ?? null,
+      },
+    );
   }
 
   return steamId64;
@@ -144,7 +200,7 @@ export async function resolveSteamId64FromInput(
   const normalized = normalizeSteamInput(input);
 
   if (!normalized) {
-    throw new Error(
+    throw new ValidationError(
       "Informe um SteamID64, vanity name ou URL do perfil Steam.",
     );
   }
@@ -168,7 +224,7 @@ export async function resolveSteamId64FromInput(
     return await resolveVanityToSteamId64(vanityCandidate);
   }
 
-  throw new Error(
+  throw new ValidationError(
     "Entrada inválida. Envie um SteamID64, uma URL /profiles/, uma URL /id/ ou um vanity name.",
   );
 }
