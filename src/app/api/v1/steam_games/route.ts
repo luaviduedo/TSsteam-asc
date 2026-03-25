@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import db from "@/drizzle/db";
+import { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
+
+import db from "@/drizzle/db";
 import {
   getValidSteamGamesCache,
   saveSteamGamesCache,
@@ -9,6 +10,14 @@ import {
 } from "@/lib/steam-games-cache";
 import { resolveSteamId64FromInput } from "@/lib/steam-resolver";
 import { steamUsersCache } from "@/drizzle/schema";
+import {
+  AppError,
+  CachePersistenceError,
+  SteamApiError,
+  SteamProfilePrivateError,
+  ValidationError,
+} from "@/lib/errors";
+import { failure, success } from "@/lib/http";
 
 type SteamApiKey = {
   label: string;
@@ -67,6 +76,11 @@ type PlayerSummariesApiResponse = {
   };
 };
 
+type PlayerAchievementsResult = {
+  achievements: PlayerAchievement[];
+  isPrivateProfile: boolean;
+};
+
 type SteamGameResponseItem = {
   appid: number;
   name: string;
@@ -77,6 +91,12 @@ type SteamGameResponseItem = {
   completion_percentage: number | null;
   completion_difficulty_rank: number | null;
   error: string | null;
+};
+
+type SerializedAppError = {
+  code: string;
+  message: string;
+  details: unknown | null;
 };
 
 const STEAM_API_KEYS: SteamApiKey[] = [
@@ -90,6 +110,34 @@ const MAX_CONCURRENCY = 5;
 
 function parseForceRefresh(value: unknown): boolean {
   return value === true;
+}
+
+function serializeAppErrors(errors: AppError[]): SerializedAppError[] {
+  const serialized: SerializedAppError[] = [];
+
+  for (const currentError of errors) {
+    serialized.push({
+      code: currentError.code,
+      message: currentError.message,
+      details: currentError.details ?? null,
+    });
+  }
+
+  return serialized;
+}
+
+function areAllPrivateProfileErrors(errors: AppError[]): boolean {
+  if (errors.length === 0) {
+    return false;
+  }
+
+  for (const currentError of errors) {
+    if (!(currentError instanceof SteamProfilePrivateError)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 async function fetchJsonWithTimeout<T>(
@@ -113,12 +161,38 @@ async function fetchJsonWithTimeout<T>(
 
     if (!response.ok) {
       const responseText = await response.text().catch(() => "");
-      throw new Error(
-        `HTTP ${response.status} - ${response.statusText} - ${responseText.slice(0, 300)}`,
+
+      if (
+        response.status === 403 &&
+        responseText.includes("Profile is not public")
+      ) {
+        throw new SteamProfilePrivateError(
+          "O perfil ou os jogos da Steam não estão públicos.",
+        );
+      }
+
+      throw new SteamApiError(
+        `Falha ao consultar Steam API: HTTP ${response.status} - ${response.statusText}`,
+        responseText.slice(0, 300),
       );
     }
 
     return (await response.json()) as T;
+  } catch (error: unknown) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new SteamApiError(
+        "Tempo limite excedido ao consultar a Steam API.",
+      );
+    }
+
+    throw new SteamApiError(
+      "Erro inesperado ao consultar a Steam API.",
+      error instanceof Error ? error.message : error,
+    );
   } finally {
     clearTimeout(timeoutId);
   }
@@ -128,23 +202,39 @@ async function fetchWithSteamApiKeys<T>(
   buildUrl: (apiKey: string) => string,
 ): Promise<T> {
   if (STEAM_API_KEYS.length === 0) {
-    throw new Error("Nenhuma chave da Steam API foi configurada.");
+    throw new ValidationError("Nenhuma chave da Steam API foi configurada.");
   }
 
-  const errors: string[] = [];
+  const collectedErrors: AppError[] = [];
 
   for (const apiKey of STEAM_API_KEYS) {
     try {
       return await fetchJsonWithTimeout<T>(buildUrl(apiKey.value));
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Erro desconhecido";
-      errors.push(`${apiKey.label}: ${message}`);
+    } catch (error: unknown) {
+      if (error instanceof AppError) {
+        collectedErrors.push(error);
+      } else {
+        collectedErrors.push(
+          new SteamApiError(
+            "Erro desconhecido ao consultar Steam API.",
+            error instanceof Error ? error.message : error,
+          ),
+        );
+      }
     }
   }
 
-  throw new Error(
-    `Falha ao consumir Steam API com todas as chaves. ${errors.join(" | ")}`,
+  if (areAllPrivateProfileErrors(collectedErrors)) {
+    throw new SteamProfilePrivateError(
+      "O perfil ou os jogos da Steam não estão públicos.",
+    );
+  }
+
+  const serializedErrors = serializeAppErrors(collectedErrors);
+
+  throw new SteamApiError(
+    "Falha ao consumir Steam API com todas as chaves.",
+    serializedErrors,
   );
 }
 
@@ -164,13 +254,7 @@ async function getSteamProfile(
     },
   );
 
-  const player = data.response?.players?.[0];
-
-  if (!player) {
-    return null;
-  }
-
-  return player;
+  return data.response?.players?.[0] ?? null;
 }
 
 async function upsertSteamUserProfile(steamId64: string): Promise<void> {
@@ -204,11 +288,11 @@ async function upsertSteamUserProfile(steamId64: string): Promise<void> {
   });
 }
 
-async function ensureSteamUserProfileSaved(steamId64: string): Promise<void> {
+async function trySaveSteamUserProfile(steamId64: string): Promise<void> {
   try {
     await upsertSteamUserProfile(steamId64);
-  } catch (error) {
-    console.error("Erro ao salvar perfil do usuário no cache:", error);
+  } catch (error: unknown) {
+    console.error("Falha não bloqueante ao salvar perfil do usuário:", error);
   }
 }
 
@@ -249,7 +333,7 @@ async function getGlobalAchievements(
 async function getPlayerAchievements(
   steamId64: string,
   appid: number,
-): Promise<PlayerAchievement[]> {
+): Promise<PlayerAchievementsResult> {
   try {
     const data = await fetchWithSteamApiKeys<PlayerAchievementsApiResponse>(
       (apiKey) => {
@@ -266,16 +350,16 @@ async function getPlayerAchievements(
       },
     );
 
-    return data.playerstats?.achievements ?? [];
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Erro desconhecido";
-
-    const isPrivateProfileError =
-      message.includes("HTTP 403") && message.includes("Profile is not public");
-
-    if (isPrivateProfileError) {
-      return [];
+    return {
+      achievements: data.playerstats?.achievements ?? [],
+      isPrivateProfile: false,
+    };
+  } catch (error: unknown) {
+    if (error instanceof SteamProfilePrivateError) {
+      return {
+        achievements: [],
+        isPrivateProfile: true,
+      };
     }
 
     throw error;
@@ -297,13 +381,10 @@ async function analyzeGame(
       return null;
     }
 
-    let playerAchievements: PlayerAchievement[] = [];
-
-    try {
-      playerAchievements = await getPlayerAchievements(steamId64, game.appid);
-    } catch {
-      playerAchievements = [];
-    }
+    const playerAchievementResult = await getPlayerAchievements(
+      steamId64,
+      game.appid,
+    );
 
     const hardestAchievementPercent = Number(
       Math.min(...globalPercents).toFixed(2),
@@ -311,9 +392,10 @@ async function analyzeGame(
 
     const totalGameAchievements = globalAchievements.length;
 
-    const playerUnlockedAchievements = playerAchievements.filter(
-      (achievement) => achievement.achieved === 1,
-    ).length;
+    const playerUnlockedAchievements =
+      playerAchievementResult.achievements.filter(
+        (achievement) => achievement.achieved === 1,
+      ).length;
 
     const completionPercentage =
       totalGameAchievements > 0
@@ -334,9 +416,11 @@ async function analyzeGame(
       total_game_achievements: totalGameAchievements,
       completion_percentage: completionPercentage,
       completion_difficulty_rank: null,
-      error: null,
+      error: playerAchievementResult.isPrivateProfile
+        ? "Conquistas do jogador indisponíveis porque o perfil ou os jogos estão privados."
+        : null,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     return {
       appid: game.appid,
       name: game.name?.trim() || `App ${game.appid}`,
@@ -429,15 +513,49 @@ async function buildFreshSteamGamesResponse(
   };
 }
 
+async function processSteamGamesRequest(
+  steamId64: string,
+  forceRefresh: boolean,
+) {
+  await trySaveSteamUserProfile(steamId64);
+
+  if (!forceRefresh) {
+    const cachedResponse = await getValidSteamGamesCache(steamId64);
+
+    if (cachedResponse) {
+      return {
+        ...cachedResponse,
+        concurrency_limit: MAX_CONCURRENCY,
+      };
+    }
+  }
+
+  const freshResponse = await buildFreshSteamGamesResponse(steamId64);
+  const responseWithMeta = withLiveMeta(freshResponse, forceRefresh);
+
+  try {
+    await saveSteamGamesCache(responseWithMeta);
+  } catch (error: unknown) {
+    throw new CachePersistenceError(
+      "Falha ao salvar cache de jogos no banco de dados.",
+      error instanceof Error ? error.message : error,
+    );
+  }
+
+  await trySaveSteamUserProfile(steamId64);
+
+  return {
+    ...responseWithMeta,
+    concurrency_limit: MAX_CONCURRENCY,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
 
     if (!body || typeof body !== "object" || Array.isArray(body)) {
-      return NextResponse.json(
-        { error: "Body inválido. Envie um JSON válido." },
-        { status: 400 },
-      );
+      throw new ValidationError("Body inválido. Envie um JSON válido.");
     }
 
     const normalizedSteamId64 = await resolveSteamId64FromInput(
@@ -445,46 +563,14 @@ export async function POST(request: NextRequest) {
     );
     const forceRefresh = parseForceRefresh(body.force_refresh);
 
-    await ensureSteamUserProfileSaved(normalizedSteamId64);
-
-    if (!forceRefresh) {
-      const cachedResponse = await getValidSteamGamesCache(normalizedSteamId64);
-
-      if (cachedResponse) {
-        return NextResponse.json(
-          {
-            ...cachedResponse,
-            concurrency_limit: MAX_CONCURRENCY,
-          },
-          { status: 200 },
-        );
-      }
-    }
-
-    const freshResponse =
-      await buildFreshSteamGamesResponse(normalizedSteamId64);
-    const responseWithMeta = withLiveMeta(freshResponse, forceRefresh);
-
-    await saveSteamGamesCache(responseWithMeta);
-    await ensureSteamUserProfileSaved(normalizedSteamId64);
-
-    return NextResponse.json(
-      {
-        ...responseWithMeta,
-        concurrency_limit: MAX_CONCURRENCY,
-      },
-      { status: 200 },
+    const result = await processSteamGamesRequest(
+      normalizedSteamId64,
+      forceRefresh,
     );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Erro interno ao buscar jogos da Steam.",
-      },
-      { status: 500 },
-    );
+
+    return success(result, 200);
+  } catch (error: unknown) {
+    return failure(error);
   }
 }
 
@@ -495,49 +581,23 @@ export async function GET(request: NextRequest) {
       request.nextUrl.searchParams.get("input")?.trim() ??
       "";
 
+    if (!rawInput) {
+      throw new ValidationError(
+        "Informe um SteamID64, vanity name ou URL do perfil Steam.",
+      );
+    }
+
     const normalizedSteamId64 = await resolveSteamId64FromInput(rawInput);
     const forceRefresh =
       request.nextUrl.searchParams.get("force_refresh") === "true";
 
-    await ensureSteamUserProfileSaved(normalizedSteamId64);
-
-    if (!forceRefresh) {
-      const cachedResponse = await getValidSteamGamesCache(normalizedSteamId64);
-
-      if (cachedResponse) {
-        return NextResponse.json(
-          {
-            ...cachedResponse,
-            concurrency_limit: MAX_CONCURRENCY,
-          },
-          { status: 200 },
-        );
-      }
-    }
-
-    const freshResponse =
-      await buildFreshSteamGamesResponse(normalizedSteamId64);
-    const responseWithMeta = withLiveMeta(freshResponse, forceRefresh);
-
-    await saveSteamGamesCache(responseWithMeta);
-    await ensureSteamUserProfileSaved(normalizedSteamId64);
-
-    return NextResponse.json(
-      {
-        ...responseWithMeta,
-        concurrency_limit: MAX_CONCURRENCY,
-      },
-      { status: 200 },
+    const result = await processSteamGamesRequest(
+      normalizedSteamId64,
+      forceRefresh,
     );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Erro interno ao buscar jogos da Steam.",
-      },
-      { status: 500 },
-    );
+
+    return success(result, 200);
+  } catch (error: unknown) {
+    return failure(error);
   }
 }
