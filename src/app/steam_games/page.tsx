@@ -195,7 +195,7 @@ export default function Home() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-sm leading-7 text-white/62 sm:text-base">
-                Cole seu SteamID64, vanity name ou a URL do perfil Steam para
+                Cole seu SteamID64, Nickname ou a URL do perfil Steam para
                 ranquear os jogos da biblioteca com base na dificuldade
                 percebida das conquistas.
               </p>
@@ -209,9 +209,6 @@ export default function Home() {
                   <Trophy className="h-5 w-5 text-sky-100" />
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-white/35">
-                    foco principal
-                  </p>
                   <p className="text-base font-medium text-white sm:text-lg">
                     Jogos mais viáveis para 100%
                   </p>
@@ -243,7 +240,7 @@ export default function Home() {
                 type="text"
                 value={steamInput}
                 onChange={(event) => setSteamInput(event.target.value)}
-                placeholder="Digite SteamID64, vanity name ou URL do perfil Steam"
+                placeholder="Digite SteamID64, Nickname ou URL do perfil Steam"
                 className="h-14 w-full rounded-xl border border-white/10 bg-[#0d1822] pl-11 pr-4 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none transition placeholder:text-white/30 focus:border-sky-300/30 focus:bg-[#112131]"
               />
             </div>

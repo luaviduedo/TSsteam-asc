@@ -100,7 +100,7 @@ export default function UsersPage() {
 
               <p className="mt-4 max-w-2xl text-sm leading-7 text-white/62 sm:text-base">
                 Busque por SteamID64 ou nome e abra um perfil completo com os
-                jogos armazenados no PostgreSQL.
+                jogos armazenados no Banco de dados.
               </p>
             </div>
 

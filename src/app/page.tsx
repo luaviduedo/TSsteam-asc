@@ -55,7 +55,7 @@ const actionCards = [
   {
     href: "https://github.com/luaviduedo/TSsteam-asc",
     title: "Repositório GitHub",
-    description: "Acesse o código-fonte completo do projeto Steam ASC.",
+    description: "Acesse o repositório completo do projeto Steam ASC.",
     icon: Github,
     external: true,
   },
@@ -90,9 +90,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-sm leading-7 text-white/62 sm:text-base sm:leading-8">
-              Explore perfis Steam, encontre jogos mais fáceis de completar e
-              acompanhe o status da aplicação em uma interface inspirada na
-              atmosfera da Steam da Valve.
+              Explore perfis Steam, encontre jogos mais fáceis de completar.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
