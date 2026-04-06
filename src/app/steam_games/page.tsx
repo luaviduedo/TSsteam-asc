@@ -1,19 +1,16 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
-  ChevronLeft,
   Gamepad2,
-  Home as HomeIcon,
   RefreshCcw,
   Search,
   ShieldAlert,
   Sparkles,
   Trophy,
 } from "lucide-react";
-import Link from "next/link";
 
 type SteamGame = {
   appid: number;
@@ -43,6 +40,14 @@ type SteamGamesResponse = {
   };
 };
 
+type DifficultyLabel =
+  | "Todas"
+  | "Muito fácil"
+  | "Fácil"
+  | "Médio"
+  | "Difícil"
+  | "Muito difícil";
+
 function formatPlaytime(minutes: number) {
   if (minutes < 60) return `${minutes} min`;
 
@@ -55,11 +60,8 @@ function formatPlaytime(minutes: number) {
 }
 
 function getDifficultyLabel(percent: number | string | null) {
-  if (percent === null || percent === undefined) return "Sem dados";
-
   const numericPercent = Number(percent);
 
-  if (Number.isNaN(numericPercent)) return "Sem dados";
   if (numericPercent >= 20) return "Muito fácil";
   if (numericPercent >= 10) return "Fácil";
   if (numericPercent >= 5) return "Médio";
@@ -69,11 +71,7 @@ function getDifficultyLabel(percent: number | string | null) {
 }
 
 function formatAchievementPercent(value: number | string | null) {
-  if (value === null || value === undefined) return "Sem dados";
-
   const numericValue = Number(value);
-
-  if (Number.isNaN(numericValue)) return "Sem dados";
 
   return `${numericValue.toFixed(2)}%`;
 }
@@ -97,6 +95,34 @@ function getDifficultyStyles(percent: number | string | null) {
   }
 }
 
+function getDifficultyButtonStyles(label: DifficultyLabel, selected: boolean) {
+  if (label === "Todas") {
+    return selected
+      ? "border-sky-300/30 bg-sky-300/15 text-sky-100"
+      : "border-white/10 bg-white/5 text-white/70 hover:border-sky-300/20 hover:bg-sky-300/10 hover:text-white";
+  }
+
+  const difficultyStyles = {
+    "Muito fácil": selected
+      ? "border-emerald-400/35 bg-emerald-400/18 text-emerald-200"
+      : "border-emerald-400/20 bg-emerald-400/10 text-emerald-300 hover:border-emerald-400/30 hover:bg-emerald-400/14",
+    Fácil: selected
+      ? "border-sky-400/35 bg-sky-400/18 text-sky-100"
+      : "border-sky-400/20 bg-sky-400/10 text-sky-300 hover:border-sky-400/30 hover:bg-sky-400/14",
+    Médio: selected
+      ? "border-amber-400/35 bg-amber-400/18 text-amber-100"
+      : "border-amber-400/20 bg-amber-400/10 text-amber-300 hover:border-amber-400/30 hover:bg-amber-400/14",
+    Difícil: selected
+      ? "border-orange-400/35 bg-orange-400/18 text-orange-100"
+      : "border-orange-400/20 bg-orange-400/10 text-orange-300 hover:border-orange-400/30 hover:bg-orange-400/14",
+    "Muito difícil": selected
+      ? "border-rose-400/35 bg-rose-400/18 text-rose-100"
+      : "border-rose-400/20 bg-rose-400/10 text-rose-300 hover:border-rose-400/30 hover:bg-rose-400/14",
+  } satisfies Record<Exclude<DifficultyLabel, "Todas">, string>;
+
+  return difficultyStyles[label];
+}
+
 function validateSteamInput(value: string) {
   const normalized = value.trim();
 
@@ -113,6 +139,8 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [result, setResult] = useState<SteamGamesResponse | null>(null);
   const [error, setError] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] =
+    useState<DifficultyLabel>("Todas");
 
   async function fetchGames(forceRefresh = false) {
     const normalizedSteamInput = steamInput.trim();
@@ -131,6 +159,7 @@ export default function Home() {
     }
 
     setError("");
+    setSelectedDifficulty("Todas");
 
     try {
       const response = await fetch("/api/v1/steam_games", {
@@ -167,6 +196,55 @@ export default function Home() {
   async function handleForceRefresh() {
     await fetchGames(true);
   }
+
+  const difficultyOptions: DifficultyLabel[] = [
+    "Todas",
+    "Muito fácil",
+    "Fácil",
+    "Médio",
+    "Difícil",
+    "Muito difícil",
+  ];
+
+  const difficultyCounts = useMemo(() => {
+    const counts: Record<DifficultyLabel, number> = {
+      Todas: result?.games.length ?? 0,
+      "Muito fácil": 0,
+      Fácil: 0,
+      Médio: 0,
+      Difícil: 0,
+      "Muito difícil": 0,
+    };
+
+    if (!result) return counts;
+
+    for (const game of result.games) {
+      const label = getDifficultyLabel(game.hardest_achievement_percent);
+      counts[label] += 1;
+    }
+
+    return counts;
+  }, [result]);
+
+  const filteredGames = useMemo(() => {
+    if (!result) return [];
+
+    if (selectedDifficulty === "Todas") {
+      return result.games;
+    }
+
+    const games: SteamGame[] = [];
+
+    for (const game of result.games) {
+      const label = getDifficultyLabel(game.hardest_achievement_percent);
+
+      if (label === selectedDifficulty) {
+        games.push(game);
+      }
+    }
+
+    return games;
+  }, [result, selectedDifficulty]);
 
   return (
     <main className="relative min-h-screen w-full overflow-hidden text-white">
@@ -335,8 +413,56 @@ export default function Home() {
               </div>
             </section>
 
+            <section className="mt-5 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.94),rgba(12,20,28,0.98))] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.20)] backdrop-blur-xl sm:p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/35">
+                    Filtro por dificuldade
+                  </p>
+                  <h2 className="mt-2 text-xl font-semibold tracking-[-0.04em] text-white">
+                    Clique em uma dificuldade para listar os jogos
+                  </h2>
+                </div>
+
+                <div className="rounded-xl border border-white/8 bg-[#0d1822] px-4 py-3 text-sm text-white/62 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                  Exibindo{" "}
+                  <span className="font-semibold text-white">
+                    {filteredGames.length}
+                  </span>{" "}
+                  de{" "}
+                  <span className="font-semibold text-white">
+                    {result.games.length}
+                  </span>{" "}
+                  jogos
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                {difficultyOptions.map((difficulty) => {
+                  const isSelected = selectedDifficulty === difficulty;
+
+                  return (
+                    <button
+                      key={difficulty}
+                      type="button"
+                      onClick={() => setSelectedDifficulty(difficulty)}
+                      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition ${getDifficultyButtonStyles(
+                        difficulty,
+                        isSelected,
+                      )}`}
+                    >
+                      <span>{difficulty}</span>
+                      <span className="rounded-full bg-black/20 px-2 py-0.5 text-[10px] text-white/90">
+                        {difficultyCounts[difficulty]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
             <section className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-4">
-              {result.games.map((game) => (
+              {filteredGames.map((game) => (
                 <article
                   key={game.appid}
                   className="group relative overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.95),rgba(12,20,28,0.985))] shadow-[0_28px_90px_rgba(0,0,0,0.30),inset_0_1px_0_rgba(255,255,255,0.05)] transition duration-300 hover:-translate-y-1 hover:border-sky-300/15"
@@ -437,6 +563,18 @@ export default function Home() {
                 </article>
               ))}
             </section>
+
+            {filteredGames.length === 0 && (
+              <section className="mt-6 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.94),rgba(12,20,28,0.98))] p-6 text-center shadow-[0_22px_60px_rgba(0,0,0,0.20)] backdrop-blur-xl">
+                <p className="text-sm text-white/60">
+                  Nenhum jogo encontrado para a dificuldade{" "}
+                  <span className="font-semibold text-white">
+                    {selectedDifficulty}
+                  </span>
+                  .
+                </p>
+              </section>
+            )}
           </>
         )}
       </section>
