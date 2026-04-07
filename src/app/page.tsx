@@ -3,6 +3,8 @@
 import {
   Activity,
   ArrowRight,
+  CheckCircle2,
+  Crown,
   Github,
   ShieldCheck,
   Sparkles,
@@ -147,8 +149,9 @@ export default function Home() {
               <div className="pointer-events-none absolute -right-4 bottom-10 h-16 w-16 rounded-full bg-cyan-200/8 blur-xl sm:-right-6 sm:h-20 sm:w-20 sm:blur-2xl lg:-right-10 lg:h-24 lg:w-24" />
 
               <div className="mb-3 flex justify-center lg:justify-start">
-                <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/15 bg-amber-300/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                  Preview de resultado
+                <div className="inline-flex items-center gap-2 rounded-full border border-sky-200/30 bg-[linear-gradient(180deg,rgba(186,230,253,0.16),rgba(96,165,250,0.10))] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                  <Crown className="h-3.5 w-3.5" />
+                  Preview platinado
                 </div>
               </div>
 
@@ -156,21 +159,35 @@ export default function Home() {
                 <div className="pointer-events-none absolute inset-x-10 bottom-[-16px] h-10 rounded-full bg-black/35 blur-xl sm:inset-x-8 sm:bottom-[-20px] sm:h-12 sm:blur-2xl lg:bottom-[-24px] lg:h-14 lg:bg-black/50" />
 
                 <div className="relative transition-transform duration-300 ease-out lg:[transform-style:preserve-3d] lg:duration-500 lg:group-hover:-translate-y-1 lg:group-hover:rotate-x-[3deg] lg:group-hover:rotate-y-[-7deg]">
-                  <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-[linear-gradient(135deg,rgba(125,211,252,0.08),transparent_25%,transparent_70%,rgba(255,255,255,0.03))] blur-md sm:blur-lg lg:blur-xl" />
+                  <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-[linear-gradient(135deg,rgba(240,249,255,0.18),rgba(125,211,252,0.14)_18%,transparent_36%,transparent_62%,rgba(191,219,254,0.10)_82%,rgba(255,255,255,0.12))] blur-md sm:blur-lg lg:blur-xl" />
+                  <div className="pointer-events-none absolute left-[-18px] top-[30px] h-28 w-28 rounded-full bg-sky-200/18 blur-3xl" />
+                  <div className="pointer-events-none absolute bottom-[-8px] right-[-12px] h-32 w-32 rounded-full bg-cyan-200/12 blur-3xl" />
 
-                  <div className="relative overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.95),rgba(12,20,28,0.985))] shadow-[0_18px_40px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)] lg:shadow-[0_28px_90px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)]">
-                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(125,211,252,0.04))]" />
+                  <div className="relative overflow-hidden rounded-[24px] border border-sky-100/45 bg-[linear-gradient(180deg,rgba(24,42,58,0.98),rgba(11,20,29,0.99))] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_28px_90px_rgba(0,0,0,0.34),0_0_40px_rgba(125,211,252,0.18),0_0_120px_rgba(191,219,254,0.06)]">
+                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(240,249,255,0.18),rgba(125,211,252,0.14)_18%,transparent_36%,transparent_62%,rgba(191,219,254,0.10)_82%,rgba(255,255,255,0.14))]" />
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-[linear-gradient(90deg,transparent,rgba(224,242,254,0.95),transparent)]" />
+                    <div className="pointer-events-none absolute -right-20 top-8 h-44 w-24 rotate-12 bg-[linear-gradient(180deg,transparent,rgba(224,242,254,0.18),transparent)] blur-xl" />
 
-                    <div className="relative h-[190px] overflow-hidden">
+                    <div className="relative h-[190px] overflow-hidden bg-[#0d1822]">
                       <img
                         src="https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/header.jpg"
                         alt="Elden Ring"
-                        className="h-full w-full object-cover transition duration-500 lg:scale-[1.02] lg:duration-700 lg:group-hover:scale-[1.06]"
+                        className="h-full w-full object-cover brightness-[1.06] saturate-[1.03] transition duration-500 lg:scale-[1.02] lg:duration-700 lg:group-hover:scale-[1.06]"
                         loading="eager"
                         decoding="async"
                       />
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b141d] via-transparent to-transparent" />
                       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/8 to-transparent" />
+
+                      <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border border-sky-100/55 bg-[linear-gradient(180deg,rgba(240,249,255,0.98),rgba(147,197,253,0.90))] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#102132] shadow-[0_14px_32px_rgba(0,0,0,0.30)]">
+                        <Crown className="h-3.5 w-3.5" />
+                        PLATINADO
+                      </div>
+
+                      <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full border border-sky-100/20 bg-slate-950/40 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-100 backdrop-blur-md">
+                        <Sparkles className="h-3 w-3" />
+                        100%
+                      </div>
                     </div>
 
                     <div className="space-y-5 p-5">
@@ -196,13 +213,13 @@ export default function Home() {
                         </span>
                       </div>
 
-                      <h3 className="min-h-[3rem] text-2xl font-semibold leading-8 tracking-[-0.04em] text-white [text-shadow:0_10px_30px_rgba(0,0,0,0.28)]">
+                      <h3 className="min-h-[3rem] text-2xl font-semibold leading-8 tracking-[-0.04em] text-sky-50 [text-shadow:0_10px_30px_rgba(0,0,0,0.28)]">
                         ELDEN RING
                       </h3>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="relative flex min-h-[110px] flex-col justify-between overflow-hidden rounded-xl border border-white/8 bg-[linear-gradient(180deg,#0f1b26_0%,#0c1620_100%)] p-3.5 shadow-[0_10px_24px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.04)] lg:shadow-[0_14px_34px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.04)] lg:transition lg:duration-300 lg:hover:border-sky-300/15">
-                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_40%,transparent_75%,rgba(125,211,252,0.03))]" />
+                        <div className="relative flex min-h-[110px] flex-col justify-between overflow-hidden rounded-xl border border-sky-100/15 bg-[linear-gradient(180deg,rgba(23,40,55,0.98),rgba(15,24,34,0.98))] p-3.5 shadow-[0_10px_28px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]">
+                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(240,249,255,0.08),transparent_52%,rgba(125,211,252,0.06))]" />
                           <span className="relative min-h-[32px] text-[10px] uppercase leading-4 tracking-[0.16em] text-white/35">
                             Conquista mais difícil
                           </span>
@@ -211,8 +228,8 @@ export default function Home() {
                           </strong>
                         </div>
 
-                        <div className="relative flex min-h-[110px] flex-col justify-between overflow-hidden rounded-xl border border-white/8 bg-[linear-gradient(180deg,#0f1b26_0%,#0c1620_100%)] p-3.5 shadow-[0_10px_24px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.04)] lg:shadow-[0_14px_34px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.04)] lg:transition lg:duration-300 lg:hover:border-sky-300/15">
-                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_40%,transparent_75%,rgba(125,211,252,0.03))]" />
+                        <div className="relative flex min-h-[110px] flex-col justify-between overflow-hidden rounded-xl border border-sky-100/15 bg-[linear-gradient(180deg,rgba(23,40,55,0.98),rgba(15,24,34,0.98))] p-3.5 shadow-[0_10px_28px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.05)]">
+                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(240,249,255,0.08),transparent_52%,rgba(125,211,252,0.06))]" />
                           <span className="relative min-h-[32px] text-[10px] uppercase leading-4 tracking-[0.16em] text-white/35">
                             Tempo jogado
                           </span>
@@ -221,24 +238,32 @@ export default function Home() {
                           </strong>
                         </div>
 
-                        <div className="relative flex min-h-[110px] flex-col justify-between overflow-hidden rounded-xl border border-white/8 bg-[linear-gradient(180deg,#0f1b26_0%,#0c1620_100%)] p-3.5 shadow-[0_10px_24px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.04)] lg:shadow-[0_14px_34px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.04)] lg:transition lg:duration-300 lg:hover:border-sky-300/15">
-                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_40%,transparent_75%,rgba(125,211,252,0.03))]" />
+                        <div className="relative flex min-h-[110px] flex-col justify-between overflow-hidden rounded-xl border border-sky-100/25 bg-[linear-gradient(180deg,rgba(39,62,84,0.98),rgba(17,29,41,0.98))] p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.26),0_0_20px_rgba(125,211,252,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]">
+                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(240,249,255,0.12),transparent_46%,rgba(125,211,252,0.10))]" />
                           <span className="relative min-h-[32px] text-[10px] uppercase leading-4 tracking-[0.16em] text-white/35">
                             Conquistas totais
                           </span>
-                          <strong className="relative mt-4 block text-[1.35rem] font-semibold leading-none text-white">
+                          <strong className="relative mt-4 block text-[1.35rem] font-semibold leading-none text-sky-50">
                             42
                           </strong>
                         </div>
 
-                        <div className="relative flex min-h-[110px] flex-col justify-between overflow-hidden rounded-xl border border-white/8 bg-[linear-gradient(180deg,#0f1b26_0%,#0c1620_100%)] p-3.5 shadow-[0_10px_24px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.04)] lg:shadow-[0_14px_34px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.04)] lg:transition lg:duration-300 lg:hover:border-sky-300/15">
-                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_40%,transparent_75%,rgba(125,211,252,0.03))]" />
+                        <div className="relative flex min-h-[110px] flex-col justify-between overflow-hidden rounded-xl border border-sky-100/25 bg-[linear-gradient(180deg,rgba(39,62,84,0.98),rgba(17,29,41,0.98))] p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.26),0_0_20px_rgba(125,211,252,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]">
+                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(240,249,255,0.12),transparent_46%,rgba(125,211,252,0.10))]" />
                           <span className="relative min-h-[32px] text-[10px] uppercase leading-4 tracking-[0.16em] text-white/35">
                             Conquistas do jogador
                           </span>
-                          <strong className="relative mt-4 block text-[1.35rem] font-semibold leading-none text-white">
+                          <strong className="relative mt-4 block text-[1.35rem] font-semibold leading-none text-sky-50">
                             42
                           </strong>
+                        </div>
+                      </div>
+
+                      <div className="relative overflow-hidden rounded-xl border border-sky-100/25 bg-[linear-gradient(180deg,rgba(224,242,254,0.16),rgba(96,165,250,0.10))] px-3 py-2.5 text-xs font-semibold text-sky-50 shadow-[0_12px_26px_rgba(0,0,0,0.18)]">
+                        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)]" />
+                        <div className="relative flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-sky-100" />
+                          Este jogo já foi concluído em 100% nesta conta.
                         </div>
                       </div>
                     </div>
