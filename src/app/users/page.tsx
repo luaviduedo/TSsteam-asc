@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowRight, Search, ShieldAlert, Sparkles, Users } from "lucide-react";
+import Link from "next/link";
+import LoadingScreen from "@/app/components/ui/loading-screen";
 
 type UserListItem = {
   steam_id_64: string;
@@ -73,6 +75,8 @@ export default function UsersPage() {
     await loadUsers(search);
   }
 
+  const showLoadingState = loading || submitting;
+
   return (
     <main className="relative min-h-screen w-full text-white">
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1560px] flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8 2xl:px-10">
@@ -100,7 +104,7 @@ export default function UsersPage() {
 
               <p className="mt-4 max-w-2xl text-sm leading-7 text-white/62 sm:text-base">
                 Busque por SteamID64 ou nome e abra um perfil completo com os
-                jogos armazenados no Banco de dados.
+                jogos armazenados no banco de dados.
               </p>
             </div>
 
@@ -114,7 +118,9 @@ export default function UsersPage() {
                     total carregado
                   </p>
                   <p className="text-base font-medium text-white sm:text-lg">
-                    {loading ? "Carregando..." : `${users.length} usuários`}
+                    {showLoadingState
+                      ? "Carregando..."
+                      : `${users.length} usuários`}
                   </p>
                 </div>
               </div>
@@ -155,66 +161,68 @@ export default function UsersPage() {
           )}
         </section>
 
-        <section className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-4">
-          {loading
-            ? Array.from({ length: 8 }).map((_, index) => (
-                <div
-                  key={`users-skeleton-${index}`}
-                  className="min-h-[220px] animate-pulse rounded-[24px] border border-white/8 bg-white/[0.04]"
-                />
-              ))
-            : users.map((user) => (
-                <a
-                  key={user.steam_id_64}
-                  href={`/users/${user.steam_id_64}`}
-                  className="group relative overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.95),rgba(12,20,28,0.985))] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.30)] transition duration-300 hover:-translate-y-1 hover:border-sky-300/15"
-                >
-                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(125,211,252,0.04))]" />
+        {showLoadingState ? (
+          <LoadingScreen
+            title="Carregando usuários"
+            description="Estamos consultando os perfis salvos no banco de dados."
+            showCards
+            cardCount={8}
+          />
+        ) : (
+          <section className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-4">
+            {users.map((user) => (
+              <Link
+                key={user.steam_id_64}
+                href={`/users/${user.steam_id_64}`}
+                className="group relative overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.95),rgba(12,20,28,0.985))] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.30)] transition duration-300 hover:-translate-y-1 hover:border-sky-300/15"
+              >
+                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(125,211,252,0.04))]" />
 
-                  <div className="relative flex items-center gap-4">
-                    <img
-                      src={
-                        user.avatarfull ||
-                        "https://avatars.cloudflare.steamstatic.com/0000000000000000000000000000000000000000_full.jpg"
-                      }
-                      alt={user.personaname || user.steam_id_64}
-                      className="h-16 w-16 rounded-full border border-white/10 object-cover"
-                    />
+                <div className="relative flex items-center gap-4">
+                  <img
+                    src={
+                      user.avatarfull ||
+                      "https://avatars.cloudflare.steamstatic.com/0000000000000000000000000000000000000000_full.jpg"
+                    }
+                    alt={user.personaname || user.steam_id_64}
+                    className="h-16 w-16 rounded-full border border-white/10 object-cover"
+                  />
 
-                    <div className="min-w-0">
-                      <p className="truncate text-lg font-semibold tracking-[-0.03em] text-white">
-                        {user.personaname || "Usuário sem nome em cache"}
-                      </p>
-                    </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-semibold tracking-[-0.03em] text-white">
+                      {user.personaname || "Usuário sem nome em cache"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-white/8 bg-[#0d1822] p-3.5">
+                    <span className="min-h-[32px] text-[10px] uppercase tracking-[0.16em] text-white/35">
+                      Jogos encontrados
+                    </span>
+                    <strong className="mt-3 block text-[1.15rem] font-semibold text-white">
+                      {user.total_games_found}
+                    </strong>
                   </div>
 
-                  <div className="relative mt-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-white/8 bg-[#0d1822] p-3.5">
-                      <span className="min-h-[32px] text-[10px] uppercase tracking-[0.16em] text-white/35">
-                        Jogos encontrados
-                      </span>
-                      <strong className="mt-3 block text-[1.15rem] font-semibold text-white">
-                        {user.total_games_found}
-                      </strong>
-                    </div>
-
-                    <div className="rounded-xl border border-white/8 bg-[#0d1822] p-3.5">
-                      <span className="min-h-[32px] text-[10px] uppercase tracking-[0.16em] text-white/35">
-                        Jogos processados
-                      </span>
-                      <strong className="mt-3 block text-[1.15rem] font-semibold text-white">
-                        {user.total_games_processed}
-                      </strong>
-                    </div>
+                  <div className="rounded-xl border border-white/8 bg-[#0d1822] p-3.5">
+                    <span className="min-h-[32px] text-[10px] uppercase tracking-[0.16em] text-white/35">
+                      Jogos processados
+                    </span>
+                    <strong className="mt-3 block text-[1.15rem] font-semibold text-white">
+                      {user.total_games_processed}
+                    </strong>
                   </div>
+                </div>
 
-                  <div className="relative mt-5 inline-flex items-center gap-2 text-sm font-medium text-sky-200">
-                    Abrir perfil
-                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                  </div>
-                </a>
-              ))}
-        </section>
+                <div className="relative mt-5 inline-flex items-center gap-2 text-sm font-medium text-sky-200">
+                  Abrir perfil
+                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                </div>
+              </Link>
+            ))}
+          </section>
+        )}
       </section>
     </main>
   );
