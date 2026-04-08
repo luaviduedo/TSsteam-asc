@@ -13,6 +13,7 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
+import LoadingScreen from "@/app/components/ui/loading-screen";
 
 type SteamGame = {
   appid: number;
@@ -434,7 +435,16 @@ export default function Home() {
           )}
         </section>
 
-        {result && (
+        {loading && (
+          <LoadingScreen
+            title="Buscando jogos da Steam"
+            description="Estamos consultando perfil, conquistas e preparando o ranking para você."
+            showCards
+            cardCount={4}
+          />
+        )}
+
+        {!loading && result && (
           <>
             <section className="mt-5 rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,28,39,0.96),rgba(11,20,29,0.965))] p-4 shadow-[0_24px_90px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:p-5">
               <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
