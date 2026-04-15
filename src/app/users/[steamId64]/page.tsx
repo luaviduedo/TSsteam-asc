@@ -554,10 +554,10 @@ export default function UserProfilePage({
               {filteredGames.map((game) => (
                 <article
                   key={game.appid}
-                  className={`group relative overflow-hidden rounded-[24px] transition duration-300 hover:-translate-y-1 ${
+                  className={`group relative overflow-hidden rounded-[24px] transition-[transform,border-color,box-shadow] duration-300 ease-out hover:scale-[1.015] ${
                     game.platinum
-                      ? "border border-sky-100/45 bg-[linear-gradient(180deg,rgba(24,42,58,0.98),rgba(11,20,29,0.99))] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_30px_95px_rgba(0,0,0,0.38),0_0_40px_rgba(125,211,252,0.18),0_0_120px_rgba(191,219,254,0.06)] hover:border-sky-50/70 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14),0_30px_95px_rgba(0,0,0,0.42),0_0_54px_rgba(125,211,252,0.24),0_0_130px_rgba(191,219,254,0.08)]"
-                      : "border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.95),rgba(12,20,28,0.985))] shadow-[0_28px_90px_rgba(0,0,0,0.30)] hover:border-sky-300/15"
+                      ? "border border-sky-100/45 bg-[linear-gradient(180deg,rgba(24,42,58,0.98),rgba(11,20,29,0.99))] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_30px_95px_rgba(0,0,0,0.38),0_0_40px_rgba(125,211,252,0.18),0_0_120px_rgba(191,219,254,0.06)] hover:border-sky-50/70 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14),0_36px_110px_rgba(0,0,0,0.42),0_0_54px_rgba(125,211,252,0.24),0_0_130px_rgba(191,219,254,0.08)]"
+                      : "border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.95),rgba(12,20,28,0.985))] shadow-[0_28px_90px_rgba(0,0,0,0.30)] hover:border-sky-300/15 hover:shadow-[0_36px_110px_rgba(0,0,0,0.34)]"
                   }`}
                 >
                   {game.platinum && (
@@ -574,24 +574,24 @@ export default function UserProfilePage({
                     <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(125,211,252,0.04))]" />
                   )}
 
-                  <div className="relative bg-[#0d1822]">
+                  <div className="relative overflow-hidden bg-[#0d1822]">
                     <img
                       src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
                       alt={game.name}
-                      className={`h-[180px] w-full object-cover transition duration-700 group-hover:scale-[1.04] ${
+                      className={`block h-[180px] w-full origin-center object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] ${
                         game.platinum ? "brightness-[1.06] saturate-[1.03]" : ""
                       }`}
                     />
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b141d] via-transparent to-transparent" />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 translate-y-[1px] bg-gradient-to-t from-[#0b141d] via-[#0b141d]/50 to-transparent will-change-transform" />
 
                     {game.platinum && (
                       <>
-                        <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border border-sky-100/55 bg-[linear-gradient(180deg,rgba(240,249,255,0.98),rgba(147,197,253,0.90))] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#102132] shadow-[0_14px_32px_rgba(0,0,0,0.30)]">
+                        <div className="absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-sky-100/55 bg-[linear-gradient(180deg,rgba(240,249,255,0.98),rgba(147,197,253,0.90))] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#102132] shadow-[0_14px_32px_rgba(0,0,0,0.30)]">
                           <Crown className="h-3.5 w-3.5" />
                           PLATINADO
                         </div>
 
-                        <div className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full border border-sky-100/20 bg-slate-950/40 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-100 backdrop-blur-md">
+                        <div className="absolute right-4 top-4 z-20 inline-flex items-center gap-1 rounded-full border border-sky-100/20 bg-slate-950/40 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-100 backdrop-blur-md">
                           <Sparkles className="h-3 w-3" />
                           100%
                         </div>
