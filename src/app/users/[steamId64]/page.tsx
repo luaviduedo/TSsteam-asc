@@ -13,6 +13,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -56,6 +57,9 @@ type DecoratedProfileGame = UserProfileResponse["games"][number] & {
   difficultyLabel: Exclude<DifficultyFilter, "Todas"> | "Sem dados";
   platinum: boolean;
 };
+
+const FALLBACK_STEAM_AVATAR =
+  "https://avatars.cloudflare.steamstatic.com/0000000000000000000000000000000000000000_full.jpg";
 
 function formatPlaytime(minutes: number) {
   if (minutes < 60) return `${minutes} min`;
@@ -175,6 +179,7 @@ export default function UserProfilePage({
     async function loadProfile() {
       try {
         const resolvedParams = await params;
+
         setSteamId64(resolvedParams.steamId64);
         setSelectedDifficulty("Todas");
         setSelectedPlatinumFilter("Todos");
@@ -365,16 +370,19 @@ export default function UserProfilePage({
               <div className="grid gap-6 lg:grid-cols-[auto_1fr] lg:items-center">
                 <div className="relative mx-auto lg:mx-0">
                   <div className="absolute inset-0 rounded-full bg-sky-400/15 blur-2xl" />
-                  <img
-                    src={
-                      result.profile.avatarfull ||
-                      "https://avatars.cloudflare.steamstatic.com/0000000000000000000000000000000000000000_full.jpg"
-                    }
-                    alt={
-                      result.profile.personaname || result.profile.steam_id_64
-                    }
-                    className="relative h-28 w-28 rounded-full border border-white/10 object-cover shadow-[0_18px_40px_rgba(0,0,0,0.30)] sm:h-32 sm:w-32"
-                  />
+
+                  <div className="relative h-28 w-28 overflow-hidden rounded-full border border-white/10 bg-[#0d1822] shadow-[0_18px_40px_rgba(0,0,0,0.30)] sm:h-32 sm:w-32">
+                    <Image
+                      src={result.profile.avatarfull || FALLBACK_STEAM_AVATAR}
+                      alt={
+                        result.profile.personaname || result.profile.steam_id_64
+                      }
+                      fill
+                      priority
+                      sizes="(max-width: 640px) 112px, 128px"
+                      className="object-cover"
+                    />
+                  </div>
                 </div>
 
                 <div className="min-w-0">
@@ -575,13 +583,20 @@ export default function UserProfilePage({
                   )}
 
                   <div className="relative overflow-hidden bg-[#0d1822]">
-                    <img
-                      src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
-                      alt={game.name}
-                      className={`block h-[180px] w-full origin-center object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] ${
-                        game.platinum ? "brightness-[1.06] saturate-[1.03]" : ""
-                      }`}
-                    />
+                    <div className="relative h-[180px] w-full overflow-hidden">
+                      <Image
+                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
+                        alt={game.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1536px) 50vw, 25vw"
+                        className={`object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] ${
+                          game.platinum
+                            ? "brightness-[1.06] saturate-[1.03]"
+                            : ""
+                        }`}
+                      />
+                    </div>
+
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 translate-y-[1px] bg-gradient-to-t from-[#0b141d] via-[#0b141d]/50 to-transparent will-change-transform" />
 
                     {game.platinum && (

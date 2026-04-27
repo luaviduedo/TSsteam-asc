@@ -13,6 +13,7 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
+import Image from "next/image";
 import LoadingScreen from "@/app/components/ui/loading-screen";
 
 type SteamGame = {
@@ -49,7 +50,8 @@ type DifficultyLabel =
   | "Fácil"
   | "Médio"
   | "Difícil"
-  | "Muito difícil";
+  | "Muito difícil"
+  | "Sem dados";
 
 type PlatinumFilter = "Todos" | "Apenas platinados" | "Apenas não platinados";
 
@@ -72,6 +74,7 @@ function formatPlaytime(minutes: number) {
 function getDifficultyLabel(percent: number | string | null) {
   const numericPercent = Number(percent);
 
+  if (percent === null || Number.isNaN(numericPercent)) return "Sem dados";
   if (numericPercent >= 20) return "Muito fácil";
   if (numericPercent >= 10) return "Fácil";
   if (numericPercent >= 5) return "Médio";
@@ -82,6 +85,10 @@ function getDifficultyLabel(percent: number | string | null) {
 
 function formatAchievementPercent(value: number | string | null) {
   const numericValue = Number(value);
+
+  if (value === null || Number.isNaN(numericValue)) {
+    return "Sem dados";
+  }
 
   return `${numericValue.toFixed(2)}%`;
 }
@@ -106,7 +113,7 @@ function getDifficultyStyles(percent: number | string | null) {
 }
 
 function getDifficultyButtonStyles(label: DifficultyLabel, selected: boolean) {
-  if (label === "Todas") {
+  if (label === "Todas" || label === "Sem dados") {
     return selected
       ? "border-sky-300/30 bg-sky-300/15 text-sky-100"
       : "border-white/10 bg-white/5 text-white/70 hover:border-sky-300/20 hover:bg-sky-300/10 hover:text-white";
@@ -128,7 +135,7 @@ function getDifficultyButtonStyles(label: DifficultyLabel, selected: boolean) {
     "Muito difícil": selected
       ? "border-rose-400/35 bg-rose-400/18 text-rose-100"
       : "border-rose-400/20 bg-rose-400/10 text-rose-300 hover:border-rose-400/30 hover:bg-rose-400/14",
-  } satisfies Record<Exclude<DifficultyLabel, "Todas">, string>;
+  } satisfies Record<Exclude<DifficultyLabel, "Todas" | "Sem dados">, string>;
 
   return difficultyStyles[label];
 }
@@ -211,7 +218,7 @@ export default function Home() {
         }),
       });
 
-      const data: SteamGamesResponse = await response.json();
+      const data = (await response.json()) as SteamGamesResponse;
 
       if (!response.ok) {
         throw new Error(data.error || "Erro ao buscar jogos.");
@@ -242,6 +249,7 @@ export default function Home() {
     "Médio",
     "Difícil",
     "Muito difícil",
+    "Sem dados",
   ];
 
   const platinumOptions: PlatinumFilter[] = [
@@ -274,6 +282,7 @@ export default function Home() {
       Médio: 0,
       Difícil: 0,
       "Muito difícil": 0,
+      "Sem dados": 0,
     };
 
     for (const game of decoratedGames) {
@@ -612,13 +621,20 @@ export default function Home() {
                   )}
 
                   <div className="relative overflow-hidden bg-[#0d1822]">
-                    <img
-                      src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
-                      alt={game.name}
-                      className={`block h-[180px] w-full origin-center object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] ${
-                        game.platinum ? "brightness-[1.06] saturate-[1.03]" : ""
-                      }`}
-                    />
+                    <div className="relative h-[180px] w-full overflow-hidden">
+                      <Image
+                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
+                        alt={game.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1536px) 50vw, 25vw"
+                        className={`object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] ${
+                          game.platinum
+                            ? "brightness-[1.06] saturate-[1.03]"
+                            : ""
+                        }`}
+                      />
+                    </div>
+
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 translate-y-[1px] bg-gradient-to-t from-[#0b141d] via-[#0b141d]/50 to-transparent will-change-transform" />
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/8 to-transparent" />
 

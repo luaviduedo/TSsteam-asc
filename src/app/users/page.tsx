@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowRight, Search, ShieldAlert, Sparkles, Users } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import LoadingScreen from "@/app/components/ui/loading-screen";
 
@@ -21,6 +22,9 @@ type UsersResponse = {
   users: UserListItem[];
   error?: string;
 };
+
+const FALLBACK_STEAM_AVATAR =
+  "https://avatars.cloudflare.steamstatic.com/0000000000000000000000000000000000000000_full.jpg";
 
 async function fetchUsers(query = ""): Promise<UsersResponse> {
   const url = new URL("/api/v1/users", window.location.origin);
@@ -113,6 +117,7 @@ export default function UsersPage() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/8 bg-[#17324a]">
                   <Users className="h-5 w-5 text-sky-100" />
                 </div>
+
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.18em] text-white/35">
                     total carregado
@@ -135,6 +140,7 @@ export default function UsersPage() {
           >
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+
               <input
                 type="text"
                 value={search}
@@ -170,57 +176,63 @@ export default function UsersPage() {
           />
         ) : (
           <section className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-4">
-            {users.map((user) => (
-              <Link
-                key={user.steam_id_64}
-                href={`/users/${user.steam_id_64}`}
-                className="group relative overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.95),rgba(12,20,28,0.985))] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.30)] transition duration-300 hover:-translate-y-1 hover:border-sky-300/15"
-              >
-                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(125,211,252,0.04))]" />
+            {users.map((user) => {
+              const avatarSrc = user.avatarfull || FALLBACK_STEAM_AVATAR;
+              const avatarAlt = user.personaname || user.steam_id_64;
 
-                <div className="relative flex items-center gap-4">
-                  <img
-                    src={
-                      user.avatarfull ||
-                      "https://avatars.cloudflare.steamstatic.com/0000000000000000000000000000000000000000_full.jpg"
-                    }
-                    alt={user.personaname || user.steam_id_64}
-                    className="h-16 w-16 rounded-full border border-white/10 object-cover"
-                  />
+              return (
+                <Link
+                  key={user.steam_id_64}
+                  href={`/users/${user.steam_id_64}`}
+                  className="group relative overflow-hidden rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(17,27,37,0.95),rgba(12,20,28,0.985))] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.30)] transition duration-300 hover:-translate-y-1 hover:border-sky-300/15"
+                >
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(125,211,252,0.04))]" />
 
-                  <div className="min-w-0">
-                    <p className="truncate text-lg font-semibold tracking-[-0.03em] text-white">
-                      {user.personaname || "Usuário sem nome em cache"}
-                    </p>
-                  </div>
-                </div>
+                  <div className="relative flex items-center gap-4">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-white/10 bg-[#0d1822]">
+                      <Image
+                        src={avatarSrc}
+                        alt={avatarAlt}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </div>
 
-                <div className="relative mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-white/8 bg-[#0d1822] p-3.5">
-                    <span className="min-h-[32px] text-[10px] uppercase tracking-[0.16em] text-white/35">
-                      Jogos encontrados
-                    </span>
-                    <strong className="mt-3 block text-[1.15rem] font-semibold text-white">
-                      {user.total_games_found}
-                    </strong>
+                    <div className="min-w-0">
+                      <p className="truncate text-lg font-semibold tracking-[-0.03em] text-white">
+                        {user.personaname || "Usuário sem nome em cache"}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="rounded-xl border border-white/8 bg-[#0d1822] p-3.5">
-                    <span className="min-h-[32px] text-[10px] uppercase tracking-[0.16em] text-white/35">
-                      Jogos processados
-                    </span>
-                    <strong className="mt-3 block text-[1.15rem] font-semibold text-white">
-                      {user.total_games_processed}
-                    </strong>
-                  </div>
-                </div>
+                  <div className="relative mt-5 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-white/8 bg-[#0d1822] p-3.5">
+                      <span className="min-h-[32px] text-[10px] uppercase tracking-[0.16em] text-white/35">
+                        Jogos encontrados
+                      </span>
+                      <strong className="mt-3 block text-[1.15rem] font-semibold text-white">
+                        {user.total_games_found}
+                      </strong>
+                    </div>
 
-                <div className="relative mt-5 inline-flex items-center gap-2 text-sm font-medium text-sky-200">
-                  Abrir perfil
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                </div>
-              </Link>
-            ))}
+                    <div className="rounded-xl border border-white/8 bg-[#0d1822] p-3.5">
+                      <span className="min-h-[32px] text-[10px] uppercase tracking-[0.16em] text-white/35">
+                        Jogos processados
+                      </span>
+                      <strong className="mt-3 block text-[1.15rem] font-semibold text-white">
+                        {user.total_games_processed}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="relative mt-5 inline-flex items-center gap-2 text-sm font-medium text-sky-200">
+                    Abrir perfil
+                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                  </div>
+                </Link>
+              );
+            })}
           </section>
         )}
       </section>
