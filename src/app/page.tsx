@@ -10,6 +10,7 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 const highlightCards = [
@@ -169,13 +170,15 @@ export default function Home() {
                     <div className="pointer-events-none absolute -right-20 top-8 h-44 w-24 rotate-12 bg-[linear-gradient(180deg,transparent,rgba(224,242,254,0.18),transparent)] blur-xl" />
 
                     <div className="relative h-[190px] overflow-hidden bg-[#0d1822]">
-                      <img
+                      <Image
                         src="https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/header.jpg"
                         alt="Elden Ring"
-                        className="h-full w-full object-cover brightness-[1.06] saturate-[1.03] transition duration-500 lg:scale-[1.02] lg:duration-700 lg:group-hover:scale-[1.06]"
-                        loading="eager"
-                        decoding="async"
+                        fill
+                        priority
+                        sizes="(max-width: 1024px) 100vw, 420px"
+                        className="object-cover brightness-[1.06] saturate-[1.03] transition duration-500 lg:scale-[1.02] lg:duration-700 lg:group-hover:scale-[1.06]"
                       />
+
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b141d] via-transparent to-transparent" />
                       <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/8 to-transparent" />
 
